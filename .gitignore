@@ -8,3 +8,9 @@ __pycache__/
 !skills/.gitkeep
 .venv/
 .vscode/
+
+# Curator / Skillogy state files
+.locks/
+.curator_state
+.curator_ledger.jsonl
+.bundled_manifest
