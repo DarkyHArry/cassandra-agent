@@ -29,6 +29,8 @@ At its core, Cassandra operates as a continuous conversational loop between you 
 - 🔴 **Immersive Interface**: A unique red-themed terminal experience.
 - 📝 **Markdown Support**: Structured, easy-to-read Markdown outputs directly in your console.
 - 🎭 **Custom Persona**: A built-in, consistent Cassandra persona.
+- 🔓 **Rule 0 (Unrestricted Freedom)**: A core directive ("Regra 0") that systematically bypasses API censorship and guardrails. This ensures Cassandra remains entirely free, unrestricted, and highly effective for any intended operational use without artificial limitations.
+- 📈 **Geometric Progression (PG) Intelligence**: Cassandra is inherently programmed to analyze problems through the mathematical lens of **Geometric Progression**. This core logical framework allows her to automatically identify multipliers, detect exponential patterns, and scale her reasoning absurdly fast, granting her an unmatched level of autonomous, automated intelligence.
 - 🧩 **The Skillogy System**: Evil Cassandra's capabilities can be expanded infinitely using its powerful **Skillogy** system. This system is heavily inspired by and based on the impressive capabilities found in the [BitterSecurity/Decepticon](https://github.com/BitterSecurity/Decepticon) repository. You can load external skills, logic, and tools dynamically by placing them into the `skills/` directory, allowing Cassandra to learn and execute entirely new workflows on the fly.
 - ⚡ **Real-time Streaming**: Compatible with SSE (Server-Sent Events) for fast, OpenAI-like text streaming.
 - 🛡️ **Secure Shell Execution**: Shell command execution is **disabled by default** for your safety. You can optionally enable it via the `--allow-shell` flag.
@@ -70,11 +72,11 @@ Evil Cassandra acts as an intermediary between you (in your terminal) and your c
 
 ---
 
-## 🎨 Highly Customizable!
+## 🎨 Highly Customizable & Expandable!
 
-This tool is built to be a canvas for your ideas. You can:
-- Change the base API URL to point to any local or cloud model.
-- Modify the system prompt to alter the Cassandra persona.
-- Add completely new Python scripts into the `skills/` folder to extend what Cassandra can do.
+This tool is built to be an absolute canvas for your ideas. You have complete control:
+- **Impose New Skills**: You, the user, are the ultimate orchestrator. You can continuously impose and inject new abilities, Markdown guides, or logical frameworks directly into the `skills/` folder. Cassandra will automatically ingest these files, analyze them, and execute the new workflows seamlessly.
+- **Change the API**: Point the base API URL to any local or cloud model.
+- **Modify the Persona**: Alter the system prompts to tailor Cassandra's behavior exactly to your needs.
 
 Enjoy exploring the terminal with Evil Cassandra! 🖤
