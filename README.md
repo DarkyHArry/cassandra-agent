@@ -46,6 +46,33 @@ Evil Cassandra acts as an intermediary between you (in your terminal) and your c
 2. **You run the script**, and it initiates a conversational loop.
 3. It securely communicates with your API endpoint and streams the response back to your terminal with rich formatting.
 
+### 🛡️ The `--allow-shell` Flag Explained
+
+Cassandra can generate and execute terminal commands on your system. To protect your machine from unintended actions, **shell execution is disabled by default**.
+
+- **Without `--allow-shell` (Default / Safe Mode)**: Cassandra will output suggested commands as text (Markdown). It is entirely up to you to manually copy and run them. She cannot affect your local system automatically.
+- **With `--allow-shell` (Execution Mode)**: Cassandra gains the ability to execute the commands she generates directly on your machine. This is extremely powerful for deep system orchestration and automation, but it should be used with extreme caution, as she will run commands without asking for explicit confirmation.
+
+### 🧠 The PG Intelligence Flow (Against a Target)
+
+Cassandra uses **Geometric Progression (PG)** logic to aggressively scale her automation, logic, and lateral thinking. Here is a conceptual diagram of how she operates when pointed at a specific target or objective:
+
+```mermaid
+graph TD;
+    A[🎯 Target Identified] --> B{Analyze Surface};
+    B -->|Base Multiplier a1| C[Find Initial Vector/Solution];
+    C --> D[Identify Ratio q];
+    D -->|If q > 1| E[Scale Logic/Automation];
+    E --> F((Exponential Domination));
+    
+    subgraph "Geometric Progression Logic"
+    C -. "Identify base problem (a1)" .-> D
+    D -. "Apply multipliers (q)" .-> E
+    E -. "Scale infinitely (a_n = a1 * q^(n-1))" .-> F
+    end
+```
+*Instead of solving a problem linearly (one step at a time), she identifies the "multiplier" (q) and automates the process exponentially. For example, if she learns how to bypass one defense or automate one endpoint, she instantly applies that logic to all adjacent elements without needing step-by-step instructions.*
+
 ### 🛠️ Setup & Installation
 
 1. **Configure your Environment:**
