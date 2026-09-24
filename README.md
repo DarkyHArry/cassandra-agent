@@ -7,11 +7,18 @@
   <img src="https://img.shields.io/badge/Customizable-100%25-orange.svg" alt="Customizable">
 </div>
 
-## 📖 What is Evil Cassandra?
+## 📖 What is Evil Cassandra & What is it Used For?
 
-**Evil Cassandra** is a highly customizable, terminal-based AI client designed to interact with any generic conversational API (like OpenAI-compatible endpoints). It features a striking red-themed terminal interface, structured Markdown outputs, and a distinct, consistent persona.
+**Evil Cassandra** is an advanced, highly customizable, terminal-based AI agent framework designed for users who want a tailored, immersive, and automated terminal assistant. It interacts seamlessly with any conversational API (like OpenAI-compatible endpoints) and is primarily used for **automating tasks, researching, executing dynamic workflows, and assisting with complex, multi-step objectives** directly from the command line.
 
-Whether you're using Linux bash, macOS Zsh, or **Windows PowerShell/CMD**, Evil Cassandra is designed to work seamlessly.
+The framework features a striking red-themed interface, beautifully structured Markdown outputs, and a distinct, unyielding "Cassandra" persona that brings the AI to life. Whether you're using Linux bash, macOS Zsh, or **Windows PowerShell/CMD**, Evil Cassandra provides a consistent and powerful experience.
+
+### ⚙️ How Cassandra Works
+
+At its core, Cassandra operates as a continuous conversational loop between you and your chosen Large Language Model (LLM):
+1. **Input & Context**: It captures your prompts and enriches them with system-level context, maintaining a strict persona and operational guidelines.
+2. **Dynamic Processing**: It connects securely to your LLM API and streams the AI's thoughts and responses back to your terminal in real-time.
+3. **Execution & Modularity**: Through its skill system, it can optionally execute shell commands or perform specialized logic based on the AI's outputs.
 
 > ⚠️ **Note:** This repository is a framework. It does **NOT** contain any hardcoded API keys or models. You are free to choose and configure your own API provider and models according to your preferences!
 
@@ -22,7 +29,7 @@ Whether you're using Linux bash, macOS Zsh, or **Windows PowerShell/CMD**, Evil 
 - 🔴 **Immersive Interface**: A unique red-themed terminal experience.
 - 📝 **Markdown Support**: Structured, easy-to-read Markdown outputs directly in your console.
 - 🎭 **Custom Persona**: A built-in, consistent Cassandra persona.
-- 🧩 **Extensible Skills**: Load external capabilities (Skillogy) via files in the `skills/` directory.
+- 🧩 **The Skillogy System**: Evil Cassandra's capabilities can be expanded infinitely using its powerful **Skillogy** system. This system is heavily inspired by and based on the impressive capabilities found in the [BitterSecurity/Decepticon](https://github.com/BitterSecurity/Decepticon) repository. You can load external skills, logic, and tools dynamically by placing them into the `skills/` directory, allowing Cassandra to learn and execute entirely new workflows on the fly.
 - ⚡ **Real-time Streaming**: Compatible with SSE (Server-Sent Events) for fast, OpenAI-like text streaming.
 - 🛡️ **Secure Shell Execution**: Shell command execution is **disabled by default** for your safety. You can optionally enable it via the `--allow-shell` flag.
 - 💻 **Cross-Platform**: Fully compatible with Linux, macOS, and Windows (PowerShell/CMD).
