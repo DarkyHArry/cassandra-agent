@@ -1,0 +1,10 @@
+# Ignorar pastas de log e env
+logs/
+.env
+__pycache__/
+
+# Não ignorar a pasta skills se houver arquivos além de gitkeep
+!skills/
+!skills/.gitkeep
+.venv/
+.vscode/
