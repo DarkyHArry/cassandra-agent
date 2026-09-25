@@ -897,7 +897,7 @@ async def chat_endpoint(req: ChatRequest):
 
     conversation.append({"role": "user", "content": prompt})
 
-    async def event_generator():
+    def event_generator():
         step = 0
         while step < 5:
             full_reply = []

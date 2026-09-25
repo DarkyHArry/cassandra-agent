@@ -1,7 +1,7 @@
 <div align="center">
   <img src="banner.png" alt="Evil Cassandra Banner" width="100%">
 
-  # 👁️‍🗨️ Evil Cassandra
+  # 👁️‍🗨️ Evil Cassandra V2.1 b
   
   [🇺🇸 English](README.md) | [🇧🇷 Português](README.pt-br.md) | [🇨🇳 中文](README.zh-cn.md)
 
@@ -99,12 +99,25 @@ graph TD;
 
 ### 🛠️ Setup & Installation
 
-1. **Configure your Environment:**
+1. **Configure your Environment & DeepSeek Login:**
+   You have two ways to power Cassandra: using an API Key or using the Free DeepSeek Web interface!
+   
+   **Option A: Using an API Key (Standard)**
    Copy the example environment file and add your API key.
    ```bash
    cp .env.example .env
    ```
    *Edit `.env` and insert your chosen provider's API key. This file is ignored by Git, ensuring your key is never leaked.*
+
+   **Option B: DeepSeek Web (Free & Automated Login)**
+   If you don't have an API key, Evil Cassandra natively integrates with the DeepSeek Web platform!
+   1. Open a terminal and start Cassandra (e.g., `python agent.py --web`).
+   2. Cassandra will automatically launch a visible Chromium browser window.
+   3. This browser will navigate directly to the DeepSeek sign-in page.
+   4. **Action required:** Log into your DeepSeek account manually in that browser window (solve the human-check / hCaptcha if prompted).
+   5. Once you are successfully logged in and the chat interface loads, Cassandra will magically extract your secure token in the background, save it to `session/session.json`, and the browser will automatically disappear.
+   6. You are connected! Future runs will reuse this token silently in the background (headless mode) without needing you to log in again.
+   > **Note:** Do NOT close the browser manually while it says "Waiting for the session...". If you close it before logging in, the connection will safely abort.
 
 2. **Install Dependencies & Run:**
    The script has an auto-install feature, but you can also use a virtual environment:

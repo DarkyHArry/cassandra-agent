@@ -132,7 +132,11 @@ def _wait_for_token(page, timeout: float) -> Optional[str]:
         token = _safe_evaluate(page, _READ_TOKEN_JS)
         if token:
             return token
-        page.wait_for_timeout(1000)
+        try:
+            page.wait_for_timeout(1000)
+        except Exception:
+            print("[auth] Navegador fechado pelo usuário antes do login ser concluído.")
+            return None
     return None
 
 
