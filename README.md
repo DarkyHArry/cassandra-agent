@@ -77,25 +77,14 @@ Cassandra can generate and execute terminal commands on your system. To protect 
 - **Without `--allow-shell` (Default / Safe Mode)**: Cassandra will output suggested commands as text (Markdown). It is entirely up to you to manually copy and run them. She cannot affect your local system automatically.
 - **With `--allow-shell` (Execution Mode)**: Cassandra gains the ability to execute the commands she generates directly on your machine. This is extremely powerful for deep system orchestration and automation, but it should be used with extreme caution, as she will run commands without asking for explicit confirmation.
 
-### 🧠 The PG Intelligence Flow (Against a Target)
+### 🧠 DeepSeek & Cassandra Flow
 
-Cassandra uses **Geometric Progression (PG)** logic to aggressively scale her automation, logic, and lateral thinking. Here is a conceptual diagram of how she operates when pointed at a specific target or objective:
+Evil Cassandra utilizes a powerful interaction flow to operate autonomously, seamlessly combining your local machine with DeepSeek's Intelligence.
 
-```mermaid
-graph TD;
-    A[🎯 Target Identified] --> B{Analyze Surface};
-    B -->|Base Multiplier a1| C[Find Initial Vector/Solution];
-    C --> D[Identify Ratio q];
-    D -->|If q > 1| E[Scale Logic/Automation];
-    E --> F((Exponential Domination));
-    
-    subgraph "Geometric Progression Logic"
-    C -. "Identify base problem (a1)" .-> D
-    D -. "Apply multipliers (q)" .-> E
-    E -. "Scale infinitely (a_n = a1 * q^(n-1))" .-> F
-    end
-```
-*Instead of solving a problem linearly (one step at a time), she identifies the "multiplier" (q) and automates the process exponentially. For example, if she learns how to bypass one defense or automate one endpoint, she instantly applies that logic to all adjacent elements without needing step-by-step instructions.*
+1. **The Brain (DeepSeek)**: DeepSeek acts as the core intelligence engine. Cassandra connects to it via a headless Playwright browser to securely intercept the data stream, including the internal **DeepThink (R1)** reasoning logs and the final answers.
+2. **The Body (Cassandra)**: Cassandra acts as the active local agent. She runs locally on your machine, reads the DeepSeek output, formats the Markdown beautifully in your terminal (or Web UI), and actively looks for shell code blocks to execute.
+3. **The Loop**: When DeepSeek suggests a terminal command, Cassandra intercepts it, executes it locally on your computer, captures the `stdout/stderr` output, and **automatically feeds the results back to DeepSeek** as a new prompt. This creates a continuous, autonomous execution loop until the final objective is completely achieved!
+
 
 ### 🛠️ Setup & Installation
 
