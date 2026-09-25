@@ -1,11 +1,25 @@
-# 👁️‍🗨️ Evil Cassandra
-
 <div align="center">
+  <img src="banner.png" alt="Evil Cassandra Banner" width="100%">
+
+  # 👁️‍🗨️ Evil Cassandra
+  
+  > *"Hack The Planet"*
+
+  <br>
+
   <img src="https://img.shields.io/badge/Status-Active-red.svg" alt="Status">
   <img src="https://img.shields.io/badge/Python-3.x-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-success.svg" alt="OS">
   <img src="https://img.shields.io/badge/Customizable-100%25-orange.svg" alt="Customizable">
+
+  <br><br>
+  
+  ⚠️ **UNIQUE & OFFICIAL REPOSITORY** ⚠️
+  
+  *Created and authored by **Mörlsara***
 </div>
+
+---
 
 ## 📖 What is Evil Cassandra & What is it Used For?
 
