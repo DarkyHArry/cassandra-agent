@@ -56,6 +56,8 @@ def _ensure_packages():
         try:
             subprocess.check_call([sys.executable, "-m", "pip", "install"] + missing)
             print("[+] Dependências instaladas com sucesso!")
+            time.sleep(1)
+            os.system('cls' if os.name == 'nt' else 'clear')
         except Exception as e:
             print(f"[-] Erro ao instalar pacotes: {e}")
             sys.exit(1)
