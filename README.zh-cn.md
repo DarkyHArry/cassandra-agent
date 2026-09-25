@@ -56,6 +56,16 @@
 
 ---
 
+## 📸 演示
+
+<div align="center">
+  <img src="demo.png" alt="Cassandra in Action" width="100%">
+  <br>
+  <em>Cassandra 自动为 Shodan 生成 LFI 攻击查询。</em>
+</div>
+
+---
+
 ## 🚀 它是如何工作的
 
 Evil Cassandra 充当您（在终端中）与您选择的 LLM API 之间的中介。

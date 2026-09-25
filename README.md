@@ -56,6 +56,16 @@ At its core, Cassandra operates as a continuous conversational loop between you 
 
 ---
 
+## 📸 Demonstration
+
+<div align="center">
+  <img src="demo.png" alt="Cassandra in Action" width="100%">
+  <br>
+  <em>Cassandra autonomously generating LFI attack queries for Shodan.</em>
+</div>
+
+---
+
 ## 🚀 How It Works
 
 Evil Cassandra acts as an intermediary between you (in your terminal) and your chosen LLM (Large Language Model) API. 

@@ -56,6 +56,16 @@ Em sua essência, a Cassandra opera como um loop conversacional contínuo entre 
 
 ---
 
+## 📸 Demonstração
+
+<div align="center">
+  <img src="demo.png" alt="Cassandra in Action" width="100%">
+  <br>
+  <em>Cassandra gerando autonomamente queries de ataque LFI para o Shodan.</em>
+</div>
+
+---
+
 ## 🚀 Como Funciona
 
 A Evil Cassandra atua como intermediária entre você (no seu terminal) e a API do LLM escolhido.
