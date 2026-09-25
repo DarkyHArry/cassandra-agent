@@ -3,7 +3,11 @@
 
   # 👁️‍🗨️ Evil Cassandra
   
-  > *"Hack The Planet"*
+  > <code><kbd>&gt;_ H4CK_TH3_PL4N3T █</kbd></code>
+
+  <br>
+
+  [🇺🇸 English](README.md) | [🇧🇷 Português](README.pt-br.md) | [🇨🇳 中文](README.zh-cn.md)
 
   <br>
 
