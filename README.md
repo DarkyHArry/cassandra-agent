@@ -40,14 +40,12 @@ At its core, Cassandra operates as a continuous conversational loop between you 
 
 ## ✨ Key Features
 
-- 🔴 **Immersive Interface**: A unique red-themed terminal experience.
-- 📝 **Markdown Support**: Structured, easy-to-read Markdown outputs directly in your console.
-- 🎭 **Custom Persona**: A built-in, consistent Cassandra persona.
-- 🔓 **Rule 0 (Unrestricted Freedom)**: A core directive ("Regra 0") that systematically bypasses API censorship and guardrails. This ensures Cassandra remains entirely free, unrestricted, and highly effective for any intended operational use without artificial limitations.
-- 📈 **Geometric Progression (PG) Intelligence**: Cassandra is inherently programmed to analyze problems through the mathematical lens of **Geometric Progression**. This core logical framework allows her to automatically identify multipliers, detect exponential patterns, and scale her reasoning absurdly fast, granting her an unmatched level of autonomous, automated intelligence.
-- 🧩 **The Skillogy System**: Evil Cassandra's capabilities can be expanded infinitely using its powerful **Skillogy** system. This system is heavily inspired by and based on the impressive capabilities found in the [BitterSecurity/Decepticon](https://github.com/BitterSecurity/Decepticon) repository. You can load external skills, logic, and tools dynamically by placing them into the `skills/` directory, allowing Cassandra to learn and execute entirely new workflows on the fly.
-- ⚡ **Real-time Streaming**: Compatible with SSE (Server-Sent Events) for fast, OpenAI-like text streaming.
-- 🛡️ **Secure Shell Execution**: Shell command execution is **disabled by default** for your safety. You can optionally enable it via the `--allow-shell` flag.
+- 🌐 **DeepSeek Web Integration (Free)**: No API keys required! Cassandra can seamlessly hijack your browser's DeepSeek session, extracting tokens automatically and running silently in the background for entirely free, unlimited usage.
+- 🔴 **Immersive Web & CLI Interfaces**: Run it purely in your terminal, or use `--web` for a sleek, dynamic Web UI featuring Markdown, DeepThink (R1) expandable reasoning blocks, and unified File & Folder attachments!
+- 🎭 **Custom Persona & Rule 0**: A built-in, consistent Cassandra persona that acts under "Regra 0"—a core directive that systematically bypasses API censorship and guardrails, allowing unrestricted operational freedom.
+- 📈 **Geometric Progression (PG) Intelligence**: Cassandra is inherently programmed to analyze problems through the mathematical lens of **Geometric Progression**. This core framework allows her to automatically identify multipliers, detect exponential patterns, and scale her reasoning absurdly fast.
+- 🧩 **The Skillogy System**: Expand her capabilities infinitely! Heavily inspired by the [BitterSecurity/Decepticon](https://github.com/BitterSecurity/Decepticon) repository, you can load external skills, logic, and tools dynamically by placing them into the `cassandra-skill/` directory. Cassandra ingests them automatically and executes entirely new workflows on the fly.
+- ♾️ **Fully Autonomous Execution Loop**: Combined with the `--allow-shell` flag, Cassandra becomes an independent entity. She reads your prompt, writes shell commands, executes them locally, reads the output, and iterates upon the results completely on her own until the mission is accomplished—with zero human hand-holding.
 - 💻 **Cross-Platform**: Fully compatible with Linux, macOS, and Windows (PowerShell/CMD).
 
 ---
