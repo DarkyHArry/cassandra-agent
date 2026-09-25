@@ -127,6 +127,7 @@ graph TD;
 
 This tool is built to be an absolute canvas for your ideas. You have complete control:
 - **Impose New Skills**: You, the user, are the ultimate orchestrator. You can continuously impose and inject new abilities, Markdown guides, or logical frameworks directly into the `skills/` folder. Cassandra will automatically ingest these files, analyze them, and execute the new workflows seamlessly.
+  > ⚠️ **Warning:** If you add too many skills, you must edit the code to adjust the character limits to avoid context size issues!
 - **Local AI & Compatibility**: Cassandra is not locked to a specific provider. You can point her base API URL to any OpenAI-compatible endpoint. This means she is **100% free to operate with local models** using **Ollama**, **LM Studio**, **MCP (Model Context Protocol)**, or any other local backend, ensuring maximum privacy and zero external censorship.
 - **Autonomous Execution**: Combined with the `--allow-shell` flag, her PG Intelligence, and Rule 0, Cassandra becomes a fully autonomous agent capable of solving complex problems without human hand-holding.
   - *Example 1 (Offensive/Recon)*: You instruct her to "Map a target network, find exposed services, and generate a vulnerability report." She will write the scanning scripts, execute them, parse the results, and create the Markdown report entirely on her own.
