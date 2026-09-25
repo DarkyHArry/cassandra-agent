@@ -1,5 +1,7 @@
 # Ignorar pastas de log e env
 logs/
+session/
+recon/
 .env
 __pycache__/
 

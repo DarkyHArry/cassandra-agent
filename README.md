@@ -117,20 +117,62 @@ graph TD;
    # Linux/macOS
    source .venv/bin/activate
    
-   # Run the client
+   # Run the client in CLI mode
    python agent.py
+   
+   # Or run the Web Interface
+   python agent.py --web
    ```
+
+---
+
+## 💻 Running Modes & Tutorials
+
+Evil Cassandra offers multiple ways to interact and operate. You can combine flags to perfectly match your use case.
+
+### 🌐 The Web Interface (`--web`)
+Cassandra features a sleek, red-themed, dynamic Web Interface. When you run `python agent.py --web`, a local server starts (default port 8080).
+- **Rich formatting:** It fully supports Markdown, DeepThink logic (hidden/expandable thoughts), and code highlighting.
+- **Attachments (Files & Directories):** Click the 📎 paperclip button to attach single files or **entire directories**. The content is automatically ingested into your prompt!
+- **Ghost Mode:** Ensures no traces are left behind when you close the session.
+
+### 🛡️ Autonomous Mode & The `--allow-shell` Flag
+Cassandra can generate and execute terminal commands on your system. To protect your machine, **shell execution is disabled by default**.
+
+- **Safe Mode (Default)**: Cassandra will output suggested commands as text (Markdown). It is entirely up to you to manually copy and run them.
+- **Execution Mode (`--allow-shell`)**: Cassandra gains the ability to execute the commands she generates directly on your machine.
+- **The Autonomous Loop**: When running in the Web Interface with `--allow-shell`, Cassandra becomes a **fully autonomous agent**. If you assign her a task, she will generate a command, execute it locally, read the output, and **automatically loop** to generate the next command. She acts proactively and won't bother you until the final objective is fully accomplished!
+
+### 🧠 The PG Intelligence Flow (Against a Target)
+
+Cassandra uses **Geometric Progression (PG)** logic to aggressively scale her automation, logic, and lateral thinking. Here is a conceptual diagram of how she operates when pointed at a specific target or objective:
+
+```mermaid
+graph TD;
+    A[🎯 Target Identified] --> B{Analyze Surface};
+    B -->|Base Multiplier a1| C[Find Initial Vector/Solution];
+    C --> D[Identify Ratio q];
+    D -->|If q > 1| E[Scale Logic/Automation];
+    E --> F((Exponential Domination));
+    
+    subgraph "Geometric Progression Logic"
+    C -. "Identify base problem (a1)" .-> D
+    D -. "Apply multipliers (q)" .-> E
+    E -. "Scale infinitely (a_n = a1 * q^(n-1))" .-> F
+    end
+```
+*Instead of solving a problem linearly (one step at a time), she identifies the "multiplier" (q) and automates the process exponentially. For example, if she learns how to bypass one defense or automate one endpoint, she instantly applies that logic to all adjacent elements without needing step-by-step instructions.*
 
 ---
 
 ## 🎨 Highly Customizable & Expandable!
 
 This tool is built to be an absolute canvas for your ideas. You have complete control:
-- **Impose New Skills**: You, the user, are the ultimate orchestrator. You can continuously impose and inject new abilities, Markdown guides, or logical frameworks directly into the `skills/` folder. Cassandra will automatically ingest these files, analyze them, and execute the new workflows seamlessly.
+- **Impose New Skills**: You, the user, are the ultimate orchestrator. You can continuously impose and inject new abilities, Markdown guides, or logical frameworks directly into the `cassandra-skill/` folder. Cassandra will automatically ingest these files, analyze them, and execute the new workflows seamlessly.
   > ⚠️ **Warning:** If you add too many skills, you must edit the code to adjust the character limits to avoid context size issues!
 - **Local AI & Compatibility**: Cassandra is not locked to a specific provider. You can point her base API URL to any OpenAI-compatible endpoint. This means she is **100% free to operate with local models** using **Ollama**, **LM Studio**, **MCP (Model Context Protocol)**, or any other local backend, ensuring maximum privacy and zero external censorship.
 - **Autonomous Execution**: Combined with the `--allow-shell` flag, her PG Intelligence, and Rule 0, Cassandra becomes a fully autonomous agent capable of solving complex problems without human hand-holding.
-  - *Example 1 (Offensive/Recon)*: You instruct her to "Map a target network, find exposed services, and generate a vulnerability report." She will write the scanning scripts, execute them, parse the results, and create the Markdown report entirely on her own.
+  - *Example 1 (Offensive/Recon)*: You instruct her to "Map a target network, find exposed services, and generate a vulnerability report." She will write the scanning scripts, execute them, parse the results, and loop automatically until the Markdown report is created.
   - *Example 2 (Development)*: You instruct her to "Analyze my local codebase, find logical bugs, and apply the fixes." She will read the files, write the patches, and execute the Git commits autonomously.
 - **Modify the Persona**: Alter the system prompts to tailor Cassandra's behavior exactly to your needs.
 
