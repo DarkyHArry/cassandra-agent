@@ -1,7 +1,7 @@
 <div align="center">
   <img src="banner.png" alt="Evil Cassandra Banner" width="100%">
 
-  # 👁️‍🗨️ Evil Cassandra
+  # 👁️‍🗨️ Evil Cassandra V2.1 b
   
   [🇺🇸 English](README.md) | [🇧🇷 Português](README.pt-br.md) | [🇨🇳 中文](README.zh-cn.md)
 
@@ -40,14 +40,12 @@ Em sua essência, a Cassandra opera como um loop conversacional contínuo entre 
 
 ## ✨ Principais Recursos
 
-- 🔴 **Interface Imersiva**: Uma experiência única no terminal com tema vermelho.
-- 📝 **Suporte a Markdown**: Saídas em Markdown estruturadas e fáceis de ler diretamente no seu console.
-- 🎭 **Persona Customizada**: A persona da Cassandra é consistente e embutida.
-- 🔓 **Regra 0 (Liberdade Irrestrita)**: Uma diretriz central ("Regra 0") que contorna sistematicamente a censura e as proteções das APIs. Isso garante que a Cassandra permaneça totalmente livre, irrestrita e altamente eficaz para qualquer uso operacional sem limitações artificiais.
-- 📈 **Inteligência por Progressão Geométrica (PG)**: A Cassandra é inerentemente programada para analisar problemas através de lentes matemáticas de **Progressão Geométrica**. Esse framework lógico permite que ela identifique multiplicadores automaticamente, detecte padrões exponenciais e escale seu raciocínio de forma absurdamente rápida, garantindo um nível inigualável de inteligência autônoma e automatizada.
-- 🧩 **O Sistema Skillogy**: As capacidades da Evil Cassandra podem ser expandidas infinitamente através do seu poderoso sistema de **Skillogy**. Esse sistema é fortemente inspirado nas capacidades impressionantes encontradas no repositório [BitterSecurity/Decepticon](https://github.com/BitterSecurity/Decepticon). Você pode carregar skills externas, lógica e ferramentas dinamicamente colocando-as na pasta `skills/`, permitindo que a Cassandra aprenda e execute novos fluxos de trabalho instantaneamente.
-- ⚡ **Streaming em Tempo Real**: Compatível com SSE (Server-Sent Events) para streaming de texto rápido, semelhante à OpenAI.
-- 🛡️ **Execução Segura no Shell**: A execução de comandos no shell é **desativada por padrão** para sua segurança. Você pode ativá-la opcionalmente através da flag `--allow-shell`.
+- 🌐 **Integração DeepSeek Web (Grátis)**: Sem necessidade de chaves de API! A Cassandra intercepta o navegador da DeepSeek, extrai tokens automaticamente e roda em segundo plano para um uso ilimitado e 100% grátis.
+- 🔴 **Interfaces Imersivas (Web e CLI)**: Rode direto no terminal, ou use `--web` para uma Interface Web belíssima, com suporte a Markdown, renderização de blocos DeepThink (R1) escondidos e anexos unificados de Arquivos e Pastas inteiras!
+- 🎭 **Persona Customizada & Regra 0**: A persona da Cassandra age sob a "Regra 0" — uma diretriz central que contorna sistematicamente a censura e as proteções das APIs, garantindo liberdade operacional total.
+- 📈 **Inteligência por Progressão Geométrica (PG)**: A Cassandra é inerentemente programada para analisar problemas através de lentes matemáticas de **Progressão Geométrica**. Esse framework lógico permite que ela identifique multiplicadores automaticamente, detecte padrões exponenciais e escale seu raciocínio de forma absurdamente rápida.
+- 🧩 **O Sistema Skillogy**: Expanda as capacidades dela infinitamente! Fortemente inspirado no [BitterSecurity/Decepticon](https://github.com/BitterSecurity/Decepticon), você pode carregar skills externas e lógicas jogando-as na pasta `cassandra-skill/`. A Cassandra engole e executa tudo dinamicamente em tempo real.
+- ♾️ **Loop de Execução 100% Autônomo**: Combinada com a flag `--allow-shell`, a Cassandra vira uma entidade independente. Ela lê seu prompt, escreve comandos bash/powershell, executa localmente, analisa a saída do terminal, e entra em um loop infinito consertando erros e avançando sozinha até a missão final estar cumprida — com zero interferência humana.
 - 💻 **Multiplataforma**: Totalmente compatível com Linux, macOS e Windows (PowerShell/CMD).
 
 ---
@@ -62,51 +60,54 @@ Em sua essência, a Cassandra opera como um loop conversacional contínuo entre 
 
 ---
 
-## 🚀 Como Funciona
+## 💻 Modos de Execução e Tutoriais
 
-A Evil Cassandra atua como intermediária entre você (no seu terminal) e a API do LLM escolhido.
+A Evil Cassandra oferece diversas maneiras de interagir e operar. Você pode combinar as flags do jeito que preferir.
 
-1. **Você fornece uma Chave de API** (através do arquivo `.env`).
-2. **Você executa o script**, e ele inicia o loop conversacional.
-3. Ela se comunica com segurança com seu endpoint de API e transmite a resposta para o seu terminal com formatação rica.
+### 🌐 A Interface Web (`--web`)
+A Cassandra possui uma Interface Web gráfica e dinâmica. Ao rodar `python agent.py --web`, um servidor local é iniciado (porta padrão 8080).
+- **Formatação Rica:** Suporta totalmente Markdown, lógica DeepThink (pensamentos que você pode expandir/ocultar) e formatação de código com syntax highlighting.
+- **Anexos (Arquivos e Pastas):** Clique no botão 📎 clipe para anexar arquivos individuais ou **pastas inteiras**. O conteúdo de tudo é automaticamente injetado no seu prompt!
+- **Modo Fantasma:** Garante que nenhum traço seja deixado para trás assim que você fechar a sessão.
 
-### 🛡️ A Flag `--allow-shell` Explicada
-
+### 🛡️ Modo Autônomo e a Flag `--allow-shell`
 A Cassandra pode gerar e executar comandos de terminal no seu sistema. Para proteger sua máquina contra ações indesejadas, **a execução no shell é desativada por padrão**.
 
-- **Sem `--allow-shell` (Modo Padrão / Seguro)**: A Cassandra exibirá os comandos sugeridos como texto (Markdown). Cabe inteiramente a você copiar e rodar manualmente. Ela não pode afetar seu sistema local automaticamente.
-- **Com `--allow-shell` (Modo de Execução)**: A Cassandra ganha a habilidade de executar os comandos que ela gera diretamente na sua máquina. Isso é extremamente poderoso para orquestração e automação profunda de sistemas, mas deve ser usado com extrema cautela, pois ela executará comandos sem pedir confirmação explícita.
+- **Modo Padrão (Seguro)**: A Cassandra exibirá os comandos sugeridos como texto (Markdown). Cabe inteiramente a você copiar e rodar manualmente.
+- **Modo de Execução (`--allow-shell`)**: A Cassandra ganha a habilidade de executar os comandos que ela gera diretamente na sua máquina.
+- **O Loop Autônomo**: Quando estiver usando a Interface Web com a flag `--allow-shell`, a Cassandra se torna uma **agente 100% autônoma**. Se você pedir uma tarefa para ela, ela irá gerar o comando, executá-lo localmente, capturar a saída e **entrar em um loop automático** gerando os próximos comandos para corrigir erros e avançar. Ela age de modo proativo e não vai te incomodar até que o objetivo final seja cumprido!
 
-### 🧠 O Fluxo de Inteligência PG (Contra um Alvo)
+### 🧠 Fluxo DeepSeek & Cassandra
 
-A Cassandra usa lógica de **Progressão Geométrica (PG)** para escalar agressivamente sua automação, lógica e pensamento lateral. Aqui está um diagrama conceitual de como ela opera quando apontada para um alvo ou objetivo específico:
+A Evil Cassandra utiliza um poderoso fluxo de interação para operar de forma autônoma, combinando perfeitamente a sua máquina local com a Inteligência da DeepSeek.
 
-```mermaid
-graph TD;
-    A[🎯 Alvo Identificado] --> B{Analisar Superfície};
-    B -->|Multiplicador Base a1| C[Encontrar Vetor/Solução Inicial];
-    C --> D[Identificar Razão q];
-    D -->|Se q > 1| E[Escalar Lógica/Automação];
-    E --> F((Dominação Exponencial));
-    
-    subgraph "Lógica de Progressão Geométrica"
-    C -. "Identificar problema base (a1)" .-> D
-    D -. "Aplicar multiplicadores (q)" .-> E
-    E -. "Escalar infinitamente (a_n = a1 * q^(n-1))" .-> F
-    end
-```
-*Em vez de resolver um problema linearmente (um passo de cada vez), ela identifica o "multiplicador" (q) e automatiza o processo exponencialmente. Por exemplo, se ela aprende como burlar uma defesa ou automatizar um endpoint, ela instantaneamente aplica essa lógica a todos os elementos adjacentes sem precisar de instruções passo-a-passo.*
+1. **O Cérebro (DeepSeek)**: A DeepSeek atua como o motor base da inteligência. A Cassandra se conecta a ela através de um navegador Playwright invisível (headless) e intercepta o fluxo de dados em tempo real, incluindo os raciocínios ocultos da IA (**DeepThink / R1**) e as respostas finais.
+2. **O Corpo (Cassandra)**: A Cassandra age como a agente local ativa. Ela roda na sua máquina, lê as saídas da DeepSeek, formata o Markdown de modo lindo (no CLI ou na Web) e procura ativamente blocos de código shell para executar.
+3. **O Loop**: Quando a DeepSeek sugere rodar um comando, a Cassandra intercepta isso, executa o comando na sua máquina real, captura a resposta do terminal e **devolve automaticamente o resultado de volta para a DeepSeek** como um novo prompt. Isso cria um loop contínuo e autônomo, rodando sozinho até o objetivo final estar concluído!
 
 ### 🛠️ Configuração e Instalação
 
-1. **Configure seu Ambiente:**
+1. **Configure seu Ambiente e Login DeepSeek:**
+   Você tem duas formas de alimentar a Cassandra: usando uma Chave de API paga, ou usando a interface gratuita da DeepSeek Web!
+   
+   **Opção A: Usando uma Chave de API (Padrão)**
    Copie o arquivo de exemplo de ambiente e adicione sua chave de API.
    ```bash
    cp .env.example .env
    ```
-   *Edite o `.env` e insira a chave da API do seu provedor. Este arquivo é ignorado pelo Git, garantindo que sua chave nunca vaze.*
+   *Edite o `.env` e insira a chave da API do seu provedor.*
 
-2. **Instale Dependências e Rode:**
+   **Opção B: DeepSeek Web (Login Grátis e Automatizado)**
+   Se você não tiver uma chave de API, a Evil Cassandra V2.1 b se integra nativamente na plataforma da DeepSeek Web!
+   1. Abra o terminal e inicie a Cassandra (ex: `python agent.py --web`).
+   2. A Cassandra abrirá automaticamente um navegador Chromium visível na tela.
+   3. O navegador navegará diretamente para a página de login da DeepSeek.
+   4. **Ação necessária:** Faça login na sua conta da DeepSeek manualmente pela janela do navegador (resolva o hCaptcha/desafio humano, se aparecer).
+   5. Assim que estiver logado com sucesso e a interface de chat carregar, a Cassandra extrairá seu token de forma mágica no fundo, o salvará em `session/session.json` e o navegador fechará sozinho.
+   6. Você está conectado! Todas as execuções futuras vão reusar esse token silenciosamente (em modo headless) sem precisar que você faça login novamente.
+   > **Nota:** NÃO FECHE o navegador com o mouse enquanto o terminal estiver dizendo "Waiting for the session...". Se você fechá-lo antes do login ser finalizado, a conexão irá falhar em segurança.
+
+1. **Instale Dependências e Rode:**
    O script possui um recurso de auto-instalação, mas você também pode usar um ambiente virtual:
    ```bash
    python -m venv .venv
@@ -117,8 +118,11 @@ graph TD;
    # Linux/macOS
    source .venv/bin/activate
    
-   # Rodar o cliente
+   # Rodar o cliente no terminal CLI
    python agent.py
+   
+   # Ou abrir na Interface Web
+   python agent.py --web
    ```
 
 ---
@@ -126,11 +130,11 @@ graph TD;
 ## 🎨 Altamente Customizável e Expansível!
 
 Esta ferramenta é feita para ser uma tela absoluta para as suas ideias. Você tem controle total:
-- **Impor Novas Skills**: Você, o usuário, é o orquestrador supremo. Você pode continuamente impor e injetar novas habilidades, guias em Markdown ou frameworks lógicos diretamente na pasta `skills/`. A Cassandra engolirá automaticamente esses arquivos, analisará e executará os novos fluxos sem problemas.
+- **Impor Novas Skills**: Você, o usuário, é o orquestrador supremo. Você pode continuamente impor e injetar novas habilidades, guias em Markdown ou frameworks lógicos diretamente na pasta `cassandra-skill/`. A Cassandra engolirá automaticamente esses arquivos, analisará e executará os novos fluxos sem problemas.
   > ⚠️ **Aviso:** Caso adicione muitas skills, você deve editar o código por causa do limite de tamanho de caracteres para não haver problemas!
 - **IA Local e Compatibilidade**: A Cassandra não está presa a um provedor específico. Você pode apontar a URL base da API para qualquer endpoint compatível com a OpenAI. Isso significa que ela é **100% livre para operar com modelos locais** utilizando **Ollama**, **LM Studio**, **MCP (Model Context Protocol)**, ou qualquer outro backend local, garantindo privacidade máxima e zero censura externa.
 - **Execução Autônoma**: Combinada com a flag `--allow-shell`, sua Inteligência PG e a Regra 0, a Cassandra se torna uma agente totalmente autônoma, capaz de resolver problemas complexos sem que humanos a segurem pela mão.
-  - *Exemplo 1 (Ofensiva/Recon)*: Você a instrui a "Mapear a rede alvo, encontrar serviços expostos e gerar um relatório de vulnerabilidades." Ela escreverá os scripts de escaneamento, os executará, processará os resultados e criará o relatório em Markdown totalmente por conta própria.
+  - *Exemplo 1 (Ofensiva/Recon)*: Você a instrui a "Mapear a rede alvo, encontrar serviços expostos e gerar um relatório de vulnerabilidades." Ela escreverá os scripts de escaneamento, os executará, analisará e operará em loop automático até que o relatório final esteja pronto.
   - *Exemplo 2 (Desenvolvimento)*: Você a instrui a "Analisar meu código local, encontrar bugs lógicos e aplicar as correções." Ela lerá os arquivos, escreverá os patches e fará os commits no Git autonomamente.
 - **Modificar a Persona**: Altere as instruções (prompts) do sistema para adaptar o comportamento da Cassandra exatamente às suas necessidades.
 
