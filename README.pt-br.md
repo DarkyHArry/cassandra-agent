@@ -19,6 +19,22 @@
   *Criado e desenvolvido por **Mörlsara***
 </div>
 
+### 🛡️ Segurança da Conta
+
+A Cassandra agora usa uma política de segurança que falha de forma segura na sessão Web do DeepSeek:
+
+- As requisições têm intervalo mínimo padrão de 3 segundos. Você pode configurar com "DEEPSEEK_MIN_REQUEST_INTERVAL".
+- Não são feitos **retries automáticos** depois de HTTP 401, 403 ou 429.
+- Sinais de CAPTCHA, WAF, verificação humana, limite de requisições ou proteção da conta ativam um circuito de segurança local e interrompem novas requisições.
+- A renovação automática da sessão em navegador headless fica desativada por padrão. Quando a sessão salva expirar, a Cassandra pede login manual em vez de ficar reabrindo o DeepSeek em segundo plano.
+- A Cassandra nunca resolve nem burla CAPTCHA.
+- Essas proteções reduzem automação desnecessária e rajadas de requisições, mas **não podem garantir que o DeepSeek jamais suspenda uma conta**. O DeepSeek controla seus próprios sistemas de risco e aplicação das regras.
+
+A documentação da API do DeepSeek recomenda espaçar as requisições quando ocorre HTTP 429, e o acordo de usuário informa que contas podem ser suspensas por violações dos termos. citeturn0search1turn0search21
+
+Para máxima segurança, use o login normal em navegador visível, não compartilhe os arquivos de sessão e não execute várias instâncias da Cassandra simultaneamente na mesma conta Web do DeepSeek.
+
+---
 ---
 
 ## 📖 O que é a Evil Cassandra e para que serve?
