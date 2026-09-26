@@ -65,7 +65,7 @@ Em sua essência, a Cassandra opera como um loop conversacional contínuo entre 
 A Evil Cassandra oferece diversas maneiras de interagir e operar. Você pode combinar as flags do jeito que preferir.
 
 ### 🌐 A Interface Web (`--web`)
-A Cassandra possui uma Interface Web gráfica e dinâmica. Ao rodar `python agent.py --web`, um servidor local é iniciado (porta padrão 8080).
+A Cassandra possui uma Interface Web gráfica e dinâmica. Ao rodar `python deepseek_web.py --web`, um servidor local é iniciado (porta padrão 8080).
 - **Formatação Rica:** Suporta totalmente Markdown, lógica DeepThink (pensamentos que você pode expandir/ocultar) e formatação de código com syntax highlighting.
 - **Anexos (Arquivos e Pastas):** Clique no botão 📎 clipe para anexar arquivos individuais ou **pastas inteiras**. O conteúdo de tudo é automaticamente injetado no seu prompt!
 - **Modo Fantasma:** Garante que nenhum traço seja deixado para trás assim que você fechar a sessão.
@@ -121,13 +121,13 @@ Depois do login, a sessão fica salva localmente em "session/session.json" e o p
 Depois do login, o comando completo é:
 
 ~~~bash
-python agent.py --allow-shell
+python deepseek_web.py --allow-shell
 ~~~
 
 Para a interface Web:
 
 ~~~bash
-python agent.py --web --allow-shell
+python deepseek_web.py --web --allow-shell
 ~~~
 
 > "--allow-shell" permite que comandos shell gerados sejam executados automaticamente na sua máquina. Use somente em um ambiente em que você confia.
@@ -152,7 +152,7 @@ Inicie um perfil separado do Chrome com remote debugging, abra "https://chat.dee
 
 ~~~bash
 python -m deepseek.auth
-python agent.py --allow-shell
+python deepseek_web.py --allow-shell
 ~~~
 
 O modo CDP reutiliza a sessão do seu navegador normal em vez de tentar disfarçar o Playwright como um navegador humano.
