@@ -84,47 +84,81 @@ Evil Cassandra utilizes a powerful interaction flow to operate autonomously, sea
 3. **The Loop**: When DeepSeek suggests a terminal command, Cassandra intercepts it, executes it locally on your computer, captures the `stdout/stderr` output, and **automatically feeds the results back to DeepSeek** as a new prompt. This creates a continuous, autonomous execution loop until the final objective is completely achieved!
 
 
-### 🛠️ Setup & Installation
+### 🛠️ Setup, DeepSeek Login & Running
 
-1. **Configure your Environment & DeepSeek Login:**
-   You have two ways to power Cassandra: using an API Key or using the Free DeepSeek Web interface!
-   
-   **Option A: Using an API Key (Standard)**
-   Copy the example environment file and add your API key.
-   ```bash
-   cp .env.example .env
-   ```
-   *Edit `.env` and insert your chosen provider's API key. This file is ignored by Git, ensuring your key is never leaked.*
+Cassandra supports DeepSeek Web sessions without an API key.
 
-   **Option B: DeepSeek Web (Free & Automated Login)**
-   If you don't have an API key, Evil Cassandra natively integrates with the DeepSeek Web platform!
-   1. Open a terminal and start Cassandra (e.g., `python agent.py --web`).
-   2. Cassandra will automatically launch a visible Chromium browser window.
-   3. This browser will navigate directly to the DeepSeek sign-in page.
-   4. **Action required:** Log into your DeepSeek account manually in that browser window (solve the human-check / hCaptcha if prompted).
-   5. Once you are successfully logged in and the chat interface loads, Cassandra will magically extract your secure token in the background, save it to `session/session.json`, and the browser will automatically disappear.
-   6. You are connected! Future runs will reuse this token silently in the background (headless mode) without needing you to log in again.
-   > **Note:** Do NOT close the browser manually while it says "Waiting for the session...". If you close it before logging in, the connection will safely abort.
+#### 1. Install dependencies
 
-2. **Install Dependencies & Run:**
-   The script has an auto-install feature, but you can also use a virtual environment:
-   ```bash
-   python -m venv .venv
-   
-   # Windows (PowerShell/CMD)
-   .venv\Scripts\activate
-   
-   # Linux/macOS
-   source .venv/bin/activate
-   
-   # Run the client in CLI mode
-   python agent.py
-   
-   # Or run the Web Interface
-   python agent.py --web
-   ```
+~~~bash
+python -m venv .venv
 
----
+# Windows
+.venv\\Scripts\\activate
+
+# Linux/macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+playwright install chromium
+~~~
+
+#### 2. Log into DeepSeek
+
+Run the login helper:
+
+~~~bash
+python -m deepseek.auth
+~~~
+
+A visible browser opens. **Log into DeepSeek yourself and complete any CAPTCHA / human verification shown by DeepSeek.** Cassandra only waits for the authenticated session; it does not solve or bypass CAPTCHA.
+
+After successful login, the session is stored locally in "session/session.json" and the browser profile in "session/profile". These files should remain private and are ignored by Git.
+
+#### 3. Run Cassandra with shell execution
+
+After login, the complete command is:
+
+~~~bash
+python agent.py --allow-shell
+~~~
+
+For the Web UI:
+
+~~~bash
+python agent.py --web --allow-shell
+~~~
+
+> "--allow-shell" lets generated shell commands execute automatically on your machine. Use it only in a workspace you trust.
+
+#### 4. If CAPTCHA keeps failing
+
+DeepSeek can reject automated browser sessions or show a CAPTCHA/network error. Recent user reports also show that CAPTCHA/login failures can occur in normal browsers, so this is not always a Cassandra bug. citeturn4reddit16turn5search8
+
+For the most reliable path, use a normal Chrome window through Chrome DevTools Protocol (CDP), then complete the CAPTCHA manually.
+
+Set:
+
+~~~bash
+# Linux/macOS
+export DEEPSEEK_CDP_URL=http://127.0.0.1:9222
+
+# PowerShell
+$env:DEEPSEEK_CDP_URL="http://127.0.0.1:9222"
+~~~
+
+Start a separate Chrome profile with remote debugging, open "https://chat.deepseek.com/", log in manually, complete the CAPTCHA, and then run:
+
+~~~bash
+python -m deepseek.auth
+python agent.py --allow-shell
+~~~
+
+The CDP mode reuses your normal browser session instead of attempting to disguise Playwright as a human browser.
+
+> Do not use CAPTCHA-solving services, token bypasses, or anti-bot evasion scripts. If DeepSeek blocks the verification, solve it in the visible browser or retry later.
+
+------
 
 ## 💻 Running Modes & Tutorials
 
