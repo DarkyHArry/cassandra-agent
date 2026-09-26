@@ -40,7 +40,8 @@ SIGNIN_URL = "https://chat.deepseek.com/sign_in"
 LAUNCH_ARGS = []
 DEEPSEEK_CDP_URL = os.getenv("DEEPSEEK_CDP_URL", "").strip()
 # Token is trusted for this long before we refresh it from the browser again.
-SESSION_MAX_AGE = 6 * 60 * 60  # 6 hours
+SESSION_MAX_AGE = 24 * 60 * 60  # 24 hours
+HEADLESS_REFRESH = os.getenv('DEEPSEEK_HEADLESS_REFRESH', '0').lower() in {'1','true','yes'}
 
 
 class LoginRequired(RuntimeError):
@@ -280,10 +281,13 @@ def get_session(
     if cached and cached.age < max_age:
         return cached
 
-    # Try a headless refresh from the (presumably logged-in) persistent profile.
-    session = _headless_refresh(profile_dir)
-    if session is not None:
-        return session
+    # Headless browser refresh is opt-in. Automated background navigation can
+    # trigger provider anti-abuse systems, so the safe default is to reuse the
+    # saved session and require a human login when it expires.
+    if HEADLESS_REFRESH:
+        session = _headless_refresh(profile_dir)
+        if session is not None:
+            return session
 
     if not allow_interactive:
         raise LoginRequired()
