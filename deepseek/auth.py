@@ -34,7 +34,11 @@ DEFAULT_SESSION_FILE = ROOT / "session" / "session.json"
 CHAT_URL = "https://chat.deepseek.com/"
 SIGNIN_URL = "https://chat.deepseek.com/sign_in"
 
-LAUNCH_ARGS = ["--disable-blink-features=AutomationControlled"]
+# Do not modify browser automation fingerprints to try to defeat CAPTCHA/WAF.
+# DeepSeek may require a real human verification step; the supported path is to
+# let the user complete it in a visible browser.
+LAUNCH_ARGS = []
+DEEPSEEK_CDP_URL = os.getenv("DEEPSEEK_CDP_URL", "").strip()
 # Token is trusted for this long before we refresh it from the browser again.
 SESSION_MAX_AGE = 6 * 60 * 60  # 6 hours
 
@@ -170,23 +174,31 @@ def login(
     pass this so the window doesn't visibly bounce CHAT_URL -> SIGNIN_URL."""
     profile_dir.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
-        try:
-            context = p.chromium.launch_persistent_context(
-                str(profile_dir), headless=headless, channel="chrome", args=LAUNCH_ARGS,
-            )
-        except Exception:
+        # Optional CDP mode reuses a normal Chrome window. This is useful when
+        # DeepSeek's CAPTCHA/WAF rejects an automated browser. The user still
+        # completes the challenge manually; Cassandra never solves or bypasses it.
+        if DEEPSEEK_CDP_URL:
+            browser = p.chromium.connect_over_cdp(DEEPSEEK_CDP_URL)
+            contexts = browser.contexts
+            context = contexts[0] if contexts else browser.new_context()
+            owns_context = not bool(contexts)
+            page = context.pages[0] if context.pages else context.new_page()
+        else:
             try:
                 context = p.chromium.launch_persistent_context(
-                    str(profile_dir), headless=headless, executable_path="/usr/bin/chromium", args=LAUNCH_ARGS,
+                    str(profile_dir), headless=headless, channel="chrome", args=LAUNCH_ARGS,
                 )
             except Exception:
-                context = p.chromium.launch_persistent_context(
-                    str(profile_dir), headless=headless, args=LAUNCH_ARGS,
-                )
-        # Evasão anti-bot para ajudar com o hCaptcha
-        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
-        page = context.pages[0] if context.pages else context.new_page()
+                try:
+                    context = p.chromium.launch_persistent_context(
+                        str(profile_dir), headless=headless, executable_path="/usr/bin/chromium", args=LAUNCH_ARGS,
+                    )
+                except Exception:
+                    context = p.chromium.launch_persistent_context(
+                        str(profile_dir), headless=headless, args=LAUNCH_ARGS,
+                    )
+            owns_context = True
+            page = context.pages[0] if context.pages else context.new_page()
 
         # Normally we first land on CHAT_URL to reuse an already-signed-in
         # profile. When the caller already knows we're logged out, skip straight
@@ -201,11 +213,13 @@ def login(
             print("[auth] Please sign in in the window (solve the human-check if "
                   "shown). Waiting for the session...")
             if not _wait_for_token(page, timeout=300):
-                context.close()
+                if owns_context:
+                    context.close()
                 raise RuntimeError("Login timed out — no token captured.")
 
         session = _capture_from_context(context, page)
-        context.close()
+        if owns_context:
+            context.close()
         if session is None:
             raise RuntimeError("Logged in but could not read the token.")
         session.save()
@@ -231,9 +245,6 @@ def _headless_refresh(profile_dir: Path) -> Optional[Session]:
                 context = p.chromium.launch_persistent_context(
                     str(profile_dir), headless=True, args=LAUNCH_ARGS,
                 )
-        # Evasão anti-bot para ajudar com o hCaptcha
-        context.add_init_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-
         page = context.pages[0] if context.pages else context.new_page()
         try:
             _safe_goto(page, CHAT_URL)
@@ -258,6 +269,10 @@ def get_session(
     If neither works and `allow_interactive` is True, open a visible window for
     manual sign-in. If it's False (the server's case — we can't pop a browser
     mid-request), raise `LoginRequired` telling the user to run the login step.
+
+    For difficult CAPTCHA/WAF environments, set DEEPSEEK_CDP_URL to a Chrome
+    instance started with remote debugging. This reuses the user's normal browser
+    session instead of trying to disguise an automated browser.
 
     Note: this uses Playwright's *sync* API, so it must not be called from inside
     an asyncio event loop — call it from a worker thread (e.g. run_in_threadpool)."""
