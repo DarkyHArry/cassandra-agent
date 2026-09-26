@@ -120,13 +120,13 @@ After successful login, the session is stored locally in "session/session.json" 
 After login, the complete command is:
 
 ~~~bash
-python agent.py --allow-shell
+python deepseek_web.py --allow-shell
 ~~~
 
 For the Web UI:
 
 ~~~bash
-python agent.py --web --allow-shell
+python deepseek_web.py --web --allow-shell
 ~~~
 
 > "--allow-shell" lets generated shell commands execute automatically on your machine. Use it only in a workspace you trust.
@@ -151,7 +151,7 @@ Start a separate Chrome profile with remote debugging, open "https://chat.deepse
 
 ~~~bash
 python -m deepseek.auth
-python agent.py --allow-shell
+python deepseek_web.py --allow-shell
 ~~~
 
 The CDP mode reuses your normal browser session instead of attempting to disguise Playwright as a human browser.
@@ -165,7 +165,7 @@ The CDP mode reuses your normal browser session instead of attempting to disguis
 Evil Cassandra offers multiple ways to interact and operate. You can combine flags to perfectly match your use case.
 
 ### 🌐 The Web Interface (`--web`)
-Cassandra features a sleek, red-themed, dynamic Web Interface. When you run `python agent.py --web`, a local server starts (default port 8080).
+Cassandra features a sleek, red-themed, dynamic Web Interface. When you run `python deepseek_web.py --web`, a local server starts (default port 8080).
 - **Rich formatting:** It fully supports Markdown, DeepThink logic (hidden/expandable thoughts), and code highlighting.
 - **Attachments (Files & Directories):** Click the 📎 paperclip button to attach single files or **entire directories**. The content is automatically ingested into your prompt!
 - **Ghost Mode:** Ensures no traces are left behind when you close the session.
