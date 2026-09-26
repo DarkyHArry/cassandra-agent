@@ -85,47 +85,81 @@ Evil Cassandra 利用强大的交互流进行自主操作，将您的本地机�
 2. **身体 (Cassandra)**：Cassandra 充当主动的本地代理。她在您的机器上本地运行，读取 DeepSeek 的输出，在您的终端（或 Web UI）中精美地格式化 Markdown，并主动寻找 shell 代码块来执行。
 3. **循环**：当 DeepSeek 建议运行终端命令时，Cassandra 拦截该命令，在您的计算机上本地执行它，捕获终端输出结果，并**自动将结果反馈给 DeepSeek** 作为新的提示。这就创建了一个持续的、自主的执行循环，直到最终目标被彻底达成！
 
-### 🛠️ 安装与设置
+### 🛠️ 安装、DeepSeek 登录与运行
 
-1. **配置您的环境与 DeepSeek 登录：**
-   您有两种方法来驱动 Cassandra：使用 API 密钥或使用免费的 DeepSeek Web 界面！
-   
-   **选项 A：使用 API 密钥（标准）**
-   复制示例环境文件并添加您的 API 密钥。
-   ```bash
-   cp .env.example .env
-   ```
-   *编辑 `.env` 并插入您选择的提供商的 API 密钥。*
+Cassandra 可以直接使用 DeepSeek Web 会话，无需 API Key。
 
-   **选项 B：DeepSeek Web（免费且自动登录）**
-   如果您没有 API 密钥，Evil Cassandra V2.1 b 原生集成了 DeepSeek Web 平台！
-   1. 打开终端并启动 Cassandra（例如 `python agent.py --web`）。
-   2. Cassandra 会自动启动一个可见的 Chromium 浏览器窗口。
-   3. 此浏览器将直接导航至 DeepSeek 登录页面。
-   4. **需要您的操作：** 请在浏览器窗口中手动登录您的 DeepSeek 帐户（如果出现提示，请解决人机验证/hCaptcha）。
-   5. 一旦您成功登录并加载聊天界面，Cassandra 会神奇地在后台提取您的安全 token，将其保存到 `session/session.json` 中，然后浏览器会自动消失。
-   6. 您已连接！未来的运行将在后台静默重用此 token（无头模式），无需您再次登录。
-   > **注意：** 当终端提示 "Waiting for the session..." 时，切勿手动关闭浏览器。如果在登录之前关闭浏览器，连接将会安全中止。
+#### 1. 安装依赖
 
-1. **安装依赖并运行：**
-   该脚本具有自动安装功能，但您也可以使用虚拟环境：
-   ```bash
-   python -m venv .venv
-   
-   # Windows (PowerShell/CMD)
-   .venv\Scripts\activate
-   
-   # Linux/macOS
-   source .venv/bin/activate
-   
-   # 在 CLI 终端运行客户端
-   python agent.py
-   
-   # 或者在 Web 界面中打开
-   python agent.py --web
-   ```
+~~~bash
+python -m venv .venv
 
----
+# Windows
+.venv\\Scripts\\activate
+
+# Linux/macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+playwright install chromium
+~~~
+
+#### 2. 登录 DeepSeek
+
+运行登录辅助程序：
+
+~~~bash
+python -m deepseek.auth
+~~~
+
+程序会打开一个可见的浏览器窗口。**请手动登录 DeepSeek，并完成 DeepSeek 显示的 CAPTCHA / 人机验证。** Cassandra 只等待已认证会话，不会自动解决或绕过 CAPTCHA。
+
+登录成功后，会话保存在 "session/session.json"，浏览器配置保存在 "session/profile"。这些文件应保持私密，并且会被 Git 忽略。
+
+#### 3. 使用 "--allow-shell" 运行 Cassandra
+
+登录完成后，完整命令：
+
+~~~bash
+python agent.py --allow-shell
+~~~
+
+使用 Web UI：
+
+~~~bash
+python agent.py --web --allow-shell
+~~~
+
+> "--allow-shell" 会允许 Cassandra 自动执行生成的 shell 命令。请只在可信工作区使用。
+
+#### 4. 如果 CAPTCHA 仍然失败
+
+DeepSeek 可能拒绝自动化浏览器会话，或者显示 CAPTCHA/网络错误。近期也有用户报告在普通浏览器中遇到 DeepSeek CAPTCHA/login 问题，因此这不一定是 Cassandra 本身的 bug。 citeturn4reddit16turn5search8
+
+更可靠的方法是通过 Chrome DevTools Protocol (CDP) 使用普通 Chrome 窗口，然后由用户手动完成 CAPTCHA。
+
+设置：
+
+~~~bash
+# Linux/macOS
+export DEEPSEEK_CDP_URL=http://127.0.0.1:9222
+
+# PowerShell
+$env:DEEPSEEK_CDP_URL="http://127.0.0.1:9222"
+~~~
+
+启动一个带 remote debugging 的独立 Chrome 配置，打开 "https://chat.deepseek.com/"，手动登录并完成 CAPTCHA，然后运行：
+
+~~~bash
+python -m deepseek.auth
+python agent.py --allow-shell
+~~~
+
+CDP 模式直接复用普通浏览器会话，不再尝试伪装 Playwright 浏览器。
+
+> 不要使用 CAPTCHA 破解服务、token bypass 或反机器人规避脚本。如果 DeepSeek 阻止验证，请在可见浏览器中完成验证，或稍后重试。
+
+------
 
 ## 🎨 高度可定制和可扩展！
 
