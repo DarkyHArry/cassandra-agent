@@ -19,6 +19,22 @@
   *Created and authored by **Mörlsara***
 </div>
 
+### 🛡️ Account Safety
+
+Cassandra now uses a fail-closed safety policy for the DeepSeek Web session:
+
+- Requests are paced by default with a 3-second minimum interval. Configure with "DEEPSEEK_MIN_REQUEST_INTERVAL" if needed.
+- Automatic retries are **not** performed after HTTP 401, 403 or 429 responses.
+- CAPTCHA, WAF, human-verification and account-protection signals trip a local circuit breaker and stop further requests.
+- Automated headless session refresh is disabled by default. When the saved session expires, Cassandra asks you to log in manually instead of repeatedly reopening DeepSeek in the background.
+- CAPTCHA is never solved or bypassed by Cassandra.
+- These protections reduce unnecessary automation and request bursts, but **cannot guarantee that DeepSeek will never suspend an account**. DeepSeek controls its own risk and enforcement systems.
+
+DeepSeek's API documentation explicitly recommends pacing requests when a 429 rate limit occurs, and its user agreement states that accounts may be suspended for violations of its terms. citeturn0search1turn0search21
+
+For maximum account safety, keep the normal visible-browser login flow, do not share session files, and do not run multiple Cassandra instances against the same DeepSeek Web account simultaneously.
+
+---
 ---
 
 ## 📖 What is Evil Cassandra & What is it Used For?
