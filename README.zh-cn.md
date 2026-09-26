@@ -19,6 +19,22 @@
   *由 **Mörlsara** 创建和编写*
 </div>
 
+### 🛡️ 账号安全
+
+Cassandra 现在对 DeepSeek Web 会话采用故障即停止的安全策略：
+
+- 默认请求之间至少间隔 3 秒，可通过 "DEEPSEEK_MIN_REQUEST_INTERVAL" 配置。
+- 收到 HTTP 401、403 或 429 后，**不会自动重试**。
+- 检测到 CAPTCHA、WAF、人机验证、限流或账号保护信号后，会触发本地安全断路器并停止后续请求。
+- 默认关闭自动 headless 会话刷新。保存的会话过期后，Cassandra 要求用户手动登录，而不是在后台反复打开 DeepSeek。
+- Cassandra 不会解决或绕过 CAPTCHA。
+- 这些保护可以减少不必要的自动化和请求突发，但**无法保证 DeepSeek 永远不会暂停账号**。最终的风险判断和账号处置由 DeepSeek 控制。
+
+DeepSeek API 文档明确建议在收到 429 限流时合理控制请求速度，其用户协议也说明违反协议可能导致账号被暂停。 citeturn0search1turn0search21
+
+为了最大限度保护账号，请使用正常的可见浏览器登录流程，不要分享会话文件，也不要让多个 Cassandra 实例同时使用同一个 DeepSeek Web 账号。
+
+---
 ---
 
 ## 📖 什么是 Evil Cassandra 及其用途？
