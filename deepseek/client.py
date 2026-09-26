@@ -30,6 +30,7 @@ import httpx
 
 from .auth import Session, get_session
 from .pow import DeepSeekPow
+from .safety import RequestGuard, SafetyTrip, is_account_protection_response
 
 BASE = "https://chat.deepseek.com"
 COMPLETION_PATH = "/api/v0/chat/completion"
@@ -94,6 +95,7 @@ class DeepSeekClient:
         # The wasmtime Store behind the PoW solver is not reentrant; serialise
         # access so concurrent server requests don't corrupt it.
         self._pow_lock = threading.Lock()
+        self._request_guard = RequestGuard(min_interval=float(__import__('os').getenv('DEEPSEEK_MIN_REQUEST_INTERVAL', '3.0')))
         self._http = httpx.Client(
             base_url=BASE,
             headers=self._base_headers(),
@@ -120,7 +122,11 @@ class DeepSeekClient:
     # --- protocol steps -----------------------------------------------------
 
     def create_chat_session(self) -> str:
+        self._request_guard.wait()
         r = self._http.post("/api/v0/chat_session/create", json={})
+        if is_account_protection_response(r.status_code, r.text):
+            self._request_guard.trip(f"DeepSeek returned HTTP {r.status_code} during session creation; Cassandra stopped to avoid repeated account-security requests.")
+            raise SafetyTrip(self._request_guard.reason)
         r.raise_for_status()
         return _biz(r.json())["chat_session"]["id"]
 
@@ -135,9 +141,13 @@ class DeepSeekClient:
             return False
 
     def _pow_header(self, target_path: str = COMPLETION_PATH) -> str:
+        self._request_guard.wait()
         r = self._http.post(
             "/api/v0/chat/create_pow_challenge", json={"target_path": target_path}
         )
+        if is_account_protection_response(r.status_code, r.text):
+            self._request_guard.trip(f"DeepSeek returned HTTP {r.status_code} while issuing a PoW challenge; Cassandra stopped instead of retrying.")
+            raise SafetyTrip(self._request_guard.reason)
         r.raise_for_status()
         challenge = _biz(r.json())["challenge"]
         with self._pow_lock:
@@ -229,9 +239,13 @@ class _Stream:
         # PoW challenges are short-lived, so solve right before the request.
         headers = {"x-ds-pow-response": self._client._pow_header()}
         meta: dict = {}
+        self._client._request_guard.wait()
         with self._client._http.stream(
             "POST", COMPLETION_PATH, json=body, headers=headers
         ) as resp:
+            if is_account_protection_response(resp.status_code, ""):
+                self._client._request_guard.trip(f"DeepSeek returned HTTP {resp.status_code} during completion; Cassandra stopped instead of retrying.")
+                raise SafetyTrip(self._client._request_guard.reason)
             resp.raise_for_status()
             yield from _parse_sse(resp.iter_lines(), meta)
         if meta.get("message_id") is not None:
