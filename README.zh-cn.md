@@ -65,7 +65,7 @@
 Evil Cassandra 提供了多种交互和操作方式。您可以结合使用各种标志来完美匹配您的用例。
 
 ### 🌐 Web 界面 (`--web`)
-Cassandra 具有一个时尚、红色主题的动态 Web 界面。当您运行 `python agent.py --web` 时，本地服务器将启动（默认端口 8080）。
+Cassandra 具有一个时尚、红色主题的动态 Web 界面。当您运行 `python deepseek_web.py --web` 时，本地服务器将启动（默认端口 8080）。
 - **富文本格式：** 完全支持 Markdown、DeepThink 逻辑（隐藏/可展开的思维）和代码高亮显示。
 - **附件（文件和目录）：** 点击 📎 曲别针按钮即可附加单个文件或**整个目录**。内容会自动注入到您的提示中！
 - **幽灵模式：** 确保在您关闭会话时不会留下任何痕迹。
@@ -121,13 +121,13 @@ python -m deepseek.auth
 登录完成后，完整命令：
 
 ~~~bash
-python agent.py --allow-shell
+python deepseek_web.py --allow-shell
 ~~~
 
 使用 Web UI：
 
 ~~~bash
-python agent.py --web --allow-shell
+python deepseek_web.py --web --allow-shell
 ~~~
 
 > "--allow-shell" 会允许 Cassandra 自动执行生成的 shell 命令。请只在可信工作区使用。
@@ -152,7 +152,7 @@ $env:DEEPSEEK_CDP_URL="http://127.0.0.1:9222"
 
 ~~~bash
 python -m deepseek.auth
-python agent.py --allow-shell
+python deepseek_web.py --allow-shell
 ~~~
 
 CDP 模式直接复用普通浏览器会话，不再尝试伪装 Playwright 浏览器。
