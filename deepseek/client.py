@@ -35,6 +35,32 @@ from .safety import RequestGuard, SafetyTrip, is_account_protection_response
 BASE = "https://chat.deepseek.com"
 COMPLETION_PATH = "/api/v0/chat/completion"
 
+
+class DeepSeekBackendError(RuntimeError):
+    """DeepSeek accepted the request (HTTP 200) but its own generation backend
+    failed.
+
+    The completion endpoint reports these on the SSE stream itself, as an
+    `event: hint` frame carrying `{"type":"error", "content":...,
+    "finish_reason":...}`. The stream then closes without ever sending a
+    response fragment, so the reply text is legitimately empty.
+
+    Before this existed the frame was silently ignored and the caller got an
+    empty string with no indication anything went wrong — indistinguishable
+    from a model that simply answered nothing. We surface it instead.
+
+    This is a provider-side, usually transient failure (a backend restart or an
+    overloaded completion pool). It is deliberately NOT treated as account
+    protection, so it does not trip the RequestGuard and does not block later
+    requests — see safety.is_account_protection_response for that distinction.
+    """
+
+    def __init__(self, message: str, finish_reason: str = ""):
+        self.finish_reason = finish_reason
+        self.detail = message
+        suffix = f" (finish_reason={finish_reason})" if finish_reason else ""
+        super().__init__(f"DeepSeek backend error: {message}{suffix}")
+
 # DeepSeek's mode pill, sent as `model_type` in the completion body. "default" is
 # Instant (the fast model); "expert" is the stronger, slower model. Omitting the
 # field lets the backend pick, so we always send one explicitly.
@@ -268,6 +294,10 @@ def _parse_sse(lines, meta: Optional[dict] = None) -> Iterator[str]:
     If `meta` is given, the assistant's `message_id` is recorded into it (used to
     build the resumable conversation_id). The exact field location can vary, so
     we look in a few plausible spots defensively.
+
+    Error frames (`event: hint` with `"type":"error"`) are raised as
+    DeepSeekBackendError rather than skipped, so a failed generation is never
+    mistaken for an empty answer.
     """
     active_path: Optional[str] = None
     emitted_initial = False
@@ -282,6 +312,14 @@ def _parse_sse(lines, meta: Optional[dict] = None) -> Iterator[str]:
             obj = json.loads(payload)
         except json.JSONDecodeError:
             continue
+
+        # Error frame: the backend refused to generate. No "v" key, so it would
+        # otherwise fall through every branch below and yield nothing.
+        if isinstance(obj, dict) and obj.get("type") == "error":
+            raise DeepSeekBackendError(
+                str(obj.get("content") or "the server reported an unspecified error"),
+                str(obj.get("finish_reason") or ""),
+            )
 
         v = obj.get("v")
 

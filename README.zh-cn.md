@@ -107,18 +107,42 @@ Cassandra 可以直接使用 DeepSeek Web 会话，无需 API Key。
 
 #### 1. 安装依赖
 
-~~~bash
+您需要 **Python 3.10+**，以及大约 500 MB 的可用磁盘空间（其中 Chromium 的下载占大部分）。
+
+**Windows — PowerShell**
+
+~~~powershell
 python -m venv .venv
-
-# Windows
-.venv\\Scripts\\activate
-
-# Linux/macOS
-source .venv/bin/activate
-
-pip install -r requirements.txt
-playwright install chromium
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m playwright install chromium
 ~~~
+
+**Windows — CMD**（如果 PowerShell 阻止激活脚本）
+
+~~~cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+~~~
+
+**Linux / macOS**
+
+~~~bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+~~~
+
+> 如果 PowerShell 提示"禁止运行脚本"，请使用上面的 CMD 块，或者执行一次
+> `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`。
+
+后续所有命令都假定虚拟环境仍处于激活状态。每次打开新终端时请重新激活。
 
 #### 2. 登录 DeepSeek
 
@@ -132,44 +156,112 @@ python -m deepseek.auth
 
 登录成功后，会话保存在 "session/session.json"，浏览器配置保存在 "session/profile"。这些文件应保持私密，并且会被 Git 忽略。
 
+> **使用 Google 账号登录？请先阅读这里。**
+> Playwright 下载的 Chromium 会被 Google 识别为自动化浏览器，因此 Google 登录会失败并提示
+> *"此浏览器或应用可能不安全"*，您根本到不了 DeepSeek 的登录表单。这是预期行为，
+> Cassandra 不会尝试绕过——请参见 `deepseek/auth.py` 中的注释。请改用以下方式之一：
+>
+> - **直接在 DeepSeek 使用邮箱 + 密码登录**，或
+> - **使用 CDP 模式（第 4 步）**，它通过一个真实正常的 Chrome 登录，可以配合 Google 使用。
+>
+> CDP 模式同时也是解决 CAPTCHA 循环的办法，一举解决两个问题。
+
+保存的会话会复用 24 小时，因此此步骤只需执行一次。之后 Cassandra 会直接读取
+"session/session.json"，不再打开浏览器。会话过期时重新执行此步骤即可。
+
 #### 3. 使用 "--allow-shell" 运行 Cassandra
 
-登录完成后，完整命令：
+**Windows — PowerShell**
 
-~~~bash
+~~~powershell
 python deepseek_web.py --allow-shell
-~~~
-
-使用 Web UI：
-
-~~~bash
 python deepseek_web.py --web --allow-shell
 ~~~
 
+**Linux / macOS**
+
+~~~bash
+python deepseek_web.py --allow-shell
+python deepseek_web.py --web --allow-shell
+~~~
+
+第一条命令启动 CLI。第二条命令在 http://127.0.0.1:8080 启动 Web UI。
+
 > "--allow-shell" 会允许 Cassandra 自动执行生成的 shell 命令。请只在可信工作区使用。
 
-#### 4. 如果 CAPTCHA 仍然失败
+#### 4. 如果 Google 登录或 CAPTCHA 仍然失败
 
 DeepSeek 可能拒绝自动化浏览器会话，或者显示 CAPTCHA/网络错误。近期也有用户报告在普通浏览器中遇到 DeepSeek CAPTCHA/login 问题，因此这不一定是 Cassandra 本身的 bug。 citeturn4reddit16turn5search8
 
-更可靠的方法是通过 Chrome DevTools Protocol (CDP) 使用普通 Chrome 窗口，然后由用户手动完成 CAPTCHA。
+更可靠的方法是通过 Chrome DevTools Protocol (CDP) 使用普通 Chrome 窗口，然后由用户手动完成登录和 CAPTCHA。
 
-设置：
+**首先，确保有真正的 Chrome 可用。** `deepseek/auth.py` 会先尝试 Chrome，再回退到 Playwright 的版本，
+但在 Linux 上 Chrome 往往根本没有安装。
+
+*Linux/macOS，已安装：*
+
+~~~bash
+google-chrome --version || google-chrome-stable --version
+~~~
+
+*Linux，没有 root/sudo 权限* —— 下载并解压到你的主目录：
+
+~~~bash
+curl -sSL -o /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+mkdir -p ~/.local/opt/chrome
+dpkg-deb -x /tmp/chrome.deb ~/.local/opt/chrome
+~/.local/opt/chrome/opt/google/chrome/chrome --version
+~~~
+
+*Windows：* Chrome 位于 `"C:\Program Files\Google\Chrome\Application\chrome.exe"`。
+
+**现在用 remote debugging 启动 Chrome。**
+
+*Windows — PowerShell*
+
+~~~powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --remote-debugging-port=9222 `
+  --user-data-dir="$env:LOCALAPPDATA\cassandra-chrome" `
+  --no-first-run `
+  "https://chat.deepseek.com/"
+~~~
+
+*Windows — CMD*
+
+~~~cmd
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%LOCALAPPDATA%\cassandra-chrome" --no-first-run "https://chat.deepseek.com/"
+~~~
+
+*Linux/macOS*
+
+~~~bash
+google-chrome --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.local/share/cassandra-chrome" \
+  --no-first-run \
+  "https://chat.deepseek.com/"
+
+# 如果 Chrome 不在 PATH 中，请改用上面解压的副本：
+~/.local/opt/chrome/opt/google/chrome/chrome --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.local/share/cassandra-chrome" \
+  --no-first-run \
+  "https://chat.deepseek.com/"
+~~~
+
+在该窗口中手动登录 DeepSeek，然后将 Cassandra 指向它：
 
 ~~~bash
 # Linux/macOS
 export DEEPSEEK_CDP_URL=http://127.0.0.1:9222
+python -m deepseek.auth
 
 # PowerShell
 $env:DEEPSEEK_CDP_URL="http://127.0.0.1:9222"
-~~~
-
-启动一个带 remote debugging 的独立 Chrome 配置，打开 "https://chat.deepseek.com/"，手动登录并完成 CAPTCHA，然后运行：
-
-~~~bash
 python -m deepseek.auth
-python deepseek_web.py --allow-shell
 ~~~
+
+一旦 "session/session.json" 生成，您就可以关闭 Chrome —— 会话是从磁盘读取的。
+`DEEPSEEK_CDP_URL` 变量只需在重新执行登录步骤时设置；正常运行不需要它。
 
 CDP 模式直接复用普通浏览器会话，不再尝试伪装 Playwright 浏览器。
 

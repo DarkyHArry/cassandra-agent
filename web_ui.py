@@ -10,6 +10,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agent import Agent, build_system_prompt, get_privilege, execute_shell_blocks
+from deepseek.client import DeepSeekBackendError
 
 app = FastAPI()
 
@@ -907,9 +908,16 @@ async def chat_endpoint(req: ChatRequest):
                 thinking=req.thinking,
                 search=req.search
             )
-            for chunk in stream_wrapper:
-                full_reply.append(chunk)
-                yield chunk
+            try:
+                for chunk in stream_wrapper:
+                    full_reply.append(chunk)
+                    yield chunk
+            except DeepSeekBackendError as e:
+                # O backend do DeepSeek falhou (ex.: reinicio, pool cheio).
+                # Não é erro de conta, então não bloqueamos futuras tentativas.
+                # O usuário vê a mensagem e pode tentar de novo.
+                yield f"\n\n> ⚠️ **DeepSeek indisponível:** {e.detail}\n> *Tente novamente em alguns segundos.*\n"
+                break
             
             reply = "".join(full_reply)
             conversation.append({"role": "assistant", "content": reply})

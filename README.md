@@ -106,18 +106,42 @@ Cassandra supports DeepSeek Web sessions without an API key.
 
 #### 1. Install dependencies
 
-~~~bash
+You need **Python 3.10+** and about 500 MB of free disk space (the Chromium download is the bulk of it).
+
+**Windows — PowerShell**
+
+~~~powershell
 python -m venv .venv
-
-# Windows
-.venv\\Scripts\\activate
-
-# Linux/macOS
-source .venv/bin/activate
-
-pip install -r requirements.txt
-playwright install chromium
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m playwright install chromium
 ~~~
+
+**Windows — CMD** (if PowerShell blocks the activation script)
+
+~~~cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+~~~
+
+**Linux / macOS**
+
+~~~bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+python -m playwright install chromium
+~~~
+
+> If PowerShell says "running scripts is disabled", either use the CMD block above or run
+> `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned` once.
+
+All later commands assume the virtualenv is still active. Re-activate it whenever you open a new terminal.
 
 #### 2. Log into DeepSeek
 
@@ -131,46 +155,115 @@ A visible browser opens. **Log into DeepSeek yourself and complete any CAPTCHA /
 
 After successful login, the session is stored locally in "session/session.json" and the browser profile in "session/profile". These files should remain private and are ignored by Git.
 
+> **Logging in with a Google account? Read this first.**
+> The Chromium build Playwright downloads is detected by Google as an automated browser, so Google
+> sign-in fails with *"This browser or app may not be secure"* and you never reach the DeepSeek form.
+> This is expected and is not something Cassandra tries to work around — see the note in
+> `deepseek/auth.py`. Use one of these instead:
+>
+> - **Sign in with an email + password** on DeepSeek directly, or
+> - **Use CDP mode (step 4)**, which logs you in through a real, normal Chrome and works with Google.
+>
+> CDP mode is also the fix for CAPTCHA loops, so it solves both problems at once.
+
+The saved session is reused for 24 hours, so this step happens once. After that, Cassandra reads
+"session/session.json" directly and never opens a browser again. Re-run this step when the session expires.
+
 #### 3. Run Cassandra with shell execution
 
-After login, the complete command is:
+**Windows — PowerShell**
 
-~~~bash
+~~~powershell
 python deepseek_web.py --allow-shell
-~~~
-
-For the Web UI:
-
-~~~bash
 python deepseek_web.py --web --allow-shell
 ~~~
 
+**Linux / macOS**
+
+~~~bash
+python deepseek_web.py --allow-shell
+python deepseek_web.py --web --allow-shell
+~~~
+
+The first command starts the CLI. The second starts the Web UI on http://127.0.0.1:8080.
+
 > "--allow-shell" lets generated shell commands execute automatically on your machine. Use it only in a workspace you trust.
 
-#### 4. If CAPTCHA keeps failing
+#### 4. If Google sign-in or CAPTCHA keeps failing
 
 DeepSeek can reject automated browser sessions or show a CAPTCHA/network error. Recent user reports also show that CAPTCHA/login failures can occur in normal browsers, so this is not always a Cassandra bug. citeturn4reddit16turn5search8
 
-For the most reliable path, use a normal Chrome window through Chrome DevTools Protocol (CDP), then complete the CAPTCHA manually.
+For the most reliable path, use a normal Chrome window through the Chrome DevTools Protocol (CDP), then complete the sign-in and CAPTCHA manually.
 
-Set:
+**First, make sure real Chrome is available.** `deepseek/auth.py` tries Chrome before falling back to
+the Playwright build, but on Linux Chrome is often not installed at all.
+
+*Linux/macOS, already installed:*
+
+~~~bash
+google-chrome --version || google-chrome-stable --version
+~~~
+
+*Linux, no root/sudo available* — download and unpack it into your home directory:
+
+~~~bash
+curl -sSL -o /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+mkdir -p ~/.local/opt/chrome
+dpkg-deb -x /tmp/chrome.deb ~/.local/opt/chrome
+~/.local/opt/chrome/opt/google/chrome/chrome --version
+~~~
+
+*Windows:* Chrome ships at `"C:\Program Files\Google\Chrome\Application\chrome.exe"`.
+
+**Now start Chrome with remote debugging.**
+
+*Windows — PowerShell*
+
+~~~powershell
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" `
+  --remote-debugging-port=9222 `
+  --user-data-dir="$env:LOCALAPPDATA\cassandra-chrome" `
+  --no-first-run `
+  "https://chat.deepseek.com/"
+~~~
+
+*Windows — CMD*
+
+~~~cmd
+start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222 --user-data-dir="%LOCALAPPDATA%\cassandra-chrome" --no-first-run "https://chat.deepseek.com/"
+~~~
+
+*Linux/macOS*
+
+~~~bash
+google-chrome --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.local/share/cassandra-chrome" \
+  --no-first-run \
+  "https://chat.deepseek.com/"
+
+# if Chrome is not on PATH, use the unpacked copy instead:
+~/.local/opt/chrome/opt/google/chrome/chrome --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.local/share/cassandra-chrome" \
+  --no-first-run \
+  "https://chat.deepseek.com/"
+~~~
+
+Log into DeepSeek in that window by hand, then point Cassandra at it:
 
 ~~~bash
 # Linux/macOS
 export DEEPSEEK_CDP_URL=http://127.0.0.1:9222
+python -m deepseek.auth
 
 # PowerShell
 $env:DEEPSEEK_CDP_URL="http://127.0.0.1:9222"
-~~~
-
-Start a separate Chrome profile with remote debugging, open "https://chat.deepseek.com/", log in manually, complete the CAPTCHA, and then run:
-
-~~~bash
 python -m deepseek.auth
-python deepseek_web.py --allow-shell
 ~~~
 
-The CDP mode reuses your normal browser session instead of attempting to disguise Playwright as a human browser.
+Once "session/session.json" exists you can close Chrome — the session is read from disk. Keep the
+`DEEPSEEK_CDP_URL` variable set only while re-running the login step; normal runs do not need it.
+
+CDP mode reuses your normal browser session instead of attempting to disguise Playwright as a human browser.
 
 > Do not use CAPTCHA-solving services, token bypasses, or anti-bot evasion scripts. If DeepSeek blocks the verification, solve it in the visible browser or retry later.
 

@@ -42,6 +42,94 @@ DEEPSEEK_CDP_URL = os.getenv("DEEPSEEK_CDP_URL", "").strip()
 # Token is trusted for this long before we refresh it from the browser again.
 SESSION_MAX_AGE = 24 * 60 * 60  # 24 hours
 HEADLESS_REFRESH = os.getenv('DEEPSEEK_HEADLESS_REFRESH', '0').lower() in {'1','true','yes'}
+LOGIN_TIMEOUT = float(os.getenv("DEEPSEEK_LOGIN_TIMEOUT", "300"))
+
+
+def _windows_chrome_exe() -> Optional[str]:
+    """Real Chrome on Windows, for when Playwright's ``channel="chrome"`` can't
+    find it (non-default install location). Returns None on other systems."""
+    if os.name != "nt":
+        return None
+    for raw in (
+        r"%PROGRAMFILES%\Google\Chrome\Application\chrome.exe",
+        r"%PROGRAMFILES(X86)%\Google\Chrome\Application\chrome.exe",
+        r"%LOCALAPPDATA%\Google\Chrome\Application\chrome.exe",
+    ):
+        path = os.path.expandvars(raw)
+        if path and os.path.isfile(path):
+            return path
+    return None
+
+
+def _launch_persistent(p, profile_dir: Path, headless: bool):
+    """Open the persistent profile, preferring a real Chrome over the bundled
+    Chromium — a real Chrome is what survives Google sign-in and CAPTCHA/WAF."""
+    try:
+        return p.chromium.launch_persistent_context(
+            str(profile_dir), headless=headless, channel="chrome", args=LAUNCH_ARGS,
+        )
+    except Exception:
+        pass
+    if os.name != "nt" and os.path.isfile("/usr/bin/chromium"):
+        try:
+            return p.chromium.launch_persistent_context(
+                str(profile_dir), headless=headless, executable_path="/usr/bin/chromium",
+                args=LAUNCH_ARGS,
+            )
+        except Exception:
+            pass
+    win_chrome = _windows_chrome_exe()
+    if win_chrome is not None:
+        try:
+            return p.chromium.launch_persistent_context(
+                str(profile_dir), headless=headless, executable_path=win_chrome,
+                args=LAUNCH_ARGS,
+            )
+        except Exception:
+            pass
+    return p.chromium.launch_persistent_context(
+        str(profile_dir), headless=headless, args=LAUNCH_ARGS,
+    )
+
+
+def _timeout_help() -> str:
+    """Actionable next steps when the login window never yields a token.
+
+    The two common causes are (1) Google sign-in refusing the automated
+    browser ("This browser or app may not be secure") and (2) a CAPTCHA/WAF
+    loop. Both are solved the same way: log in through a real Chrome via CDP
+    instead of the Playwright build.
+    """
+    if os.name == "nt":
+        return (
+            "Likely causes: Google sign-in blocks automated browsers, or DeepSeek "
+            "is looping a CAPTCHA/human-check.\n"
+            "Fix — use a real Chrome via CDP:\n"
+            '  1. Close Chrome, then run:\n'
+            '     & "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" `\n'
+            '       --remote-debugging-port=9222 `\n'
+            '       --user-data-dir="$env:LOCALAPPDATA\\cassandra-chrome" `\n'
+            '       --no-first-run "https://chat.deepseek.com/"\n'
+            "  2. Sign in in that window (Google works there), solve any CAPTCHA.\n"
+            "  3. In another terminal:\n"
+            '     $env:DEEPSEEK_CDP_URL="http://127.0.0.1:9222"\n'
+            "     python -m deepseek.auth\n"
+            "Cassandra never solves CAPTCHAs itself — complete them by hand."
+        )
+    return (
+        "Likely causes: Google sign-in blocks automated browsers, or DeepSeek "
+        "is looping a CAPTCHA/human-check.\n"
+        "Fix — use a real Chrome via CDP:\n"
+        "  1. Close Chrome, then run:\n"
+        "     google-chrome --remote-debugging-port=9222 \\\n"
+        '       --user-data-dir="$HOME/.local/share/cassandra-chrome" \\\n'
+        '       --no-first-run "https://chat.deepseek.com/"\n'
+        "  2. Sign in in that window (Google works there), solve any CAPTCHA.\n"
+        "  3. In another terminal:\n"
+        "     export DEEPSEEK_CDP_URL=http://127.0.0.1:9222\n"
+        "     python -m deepseek.auth\n"
+        "Cassandra never solves CAPTCHAs itself — complete them by hand."
+    )
 
 
 class LoginRequired(RuntimeError):
@@ -163,6 +251,7 @@ def login(
     profile_dir: Path = DEFAULT_PROFILE_DIR,
     headless: bool = False,
     assume_logged_out: bool = False,
+    timeout: float = LOGIN_TIMEOUT,
 ) -> Session:
     """Interactive login. Opens a visible window and waits for you to sign in by
     hand (and clear the AWS WAF human-check); once a token appears it captures
@@ -185,19 +274,7 @@ def login(
             owns_context = not bool(contexts)
             page = context.pages[0] if context.pages else context.new_page()
         else:
-            try:
-                context = p.chromium.launch_persistent_context(
-                    str(profile_dir), headless=headless, channel="chrome", args=LAUNCH_ARGS,
-                )
-            except Exception:
-                try:
-                    context = p.chromium.launch_persistent_context(
-                        str(profile_dir), headless=headless, executable_path="/usr/bin/chromium", args=LAUNCH_ARGS,
-                    )
-                except Exception:
-                    context = p.chromium.launch_persistent_context(
-                        str(profile_dir), headless=headless, args=LAUNCH_ARGS,
-                    )
+            context = _launch_persistent(p, profile_dir, headless)
             owns_context = True
             page = context.pages[0] if context.pages else context.new_page()
 
@@ -213,10 +290,13 @@ def login(
             _safe_goto(page, SIGNIN_URL)
             print("[auth] Please sign in in the window (solve the human-check if "
                   "shown). Waiting for the session...")
-            if not _wait_for_token(page, timeout=300):
+            if not _wait_for_token(page, timeout=timeout):
                 if owns_context:
                     context.close()
-                raise RuntimeError("Login timed out — no token captured.")
+                raise RuntimeError(
+                    f"Login timed out after {timeout:.0f}s — no token captured.\n\n"
+                    + _timeout_help()
+                )
 
         session = _capture_from_context(context, page)
         if owns_context:
@@ -233,19 +313,7 @@ def _headless_refresh(profile_dir: Path) -> Optional[Session]:
     visible window."""
     profile_dir.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
-        try:
-            context = p.chromium.launch_persistent_context(
-                str(profile_dir), headless=True, channel="chrome", args=LAUNCH_ARGS,
-            )
-        except Exception:
-            try:
-                context = p.chromium.launch_persistent_context(
-                    str(profile_dir), headless=True, executable_path="/usr/bin/chromium", args=LAUNCH_ARGS,
-                )
-            except Exception:
-                context = p.chromium.launch_persistent_context(
-                    str(profile_dir), headless=True, args=LAUNCH_ARGS,
-                )
+        context = _launch_persistent(p, profile_dir, headless=True)
         page = context.pages[0] if context.pages else context.new_page()
         try:
             _safe_goto(page, CHAT_URL)
@@ -301,5 +369,24 @@ def get_session(
 
 
 if __name__ == "__main__":
-    s = login()
+    import argparse
+
+    ap = argparse.ArgumentParser(
+        description="DeepSeek login helper — opens a browser once so you can sign "
+                    "in, then saves the session for later runs."
+    )
+    ap.add_argument(
+        "--cdp-url", default="",
+        help="Chrome DevTools URL, e.g. http://127.0.0.1:9222. Reuses a real "
+             "Chrome window (required for Google sign-in / CAPTCHA loops). "
+             "Overrides DEEPSEEK_CDP_URL.",
+    )
+    ap.add_argument(
+        "--timeout", type=float, default=LOGIN_TIMEOUT,
+        help=f"Seconds to wait for login (default {LOGIN_TIMEOUT:.0f}).",
+    )
+    args = ap.parse_args()
+    if args.cdp_url.strip():
+        globals()["DEEPSEEK_CDP_URL"] = args.cdp_url.strip()
+    s = login(timeout=args.timeout)
     print(f"[auth] captured token {s.token[:10]}... ({len(s.cookies)} cookies)")
