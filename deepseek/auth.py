@@ -26,6 +26,11 @@ from typing import Dict, Optional
 
 from playwright.sync_api import sync_playwright
 
+try:
+    import httpx
+except ImportError:  # pragma: no cover — probe skipped without httpx
+    httpx = None  # type: ignore
+
 ROOT = Path(__file__).resolve().parent.parent
 # Override with DEEPSEEK_PROFILE_DIR to reuse an existing signed-in Chrome profile.
 DEFAULT_PROFILE_DIR = Path(os.getenv("DEEPSEEK_PROFILE_DIR", ROOT / "session" / "profile"))
@@ -205,6 +210,66 @@ def _safe_evaluate(page, js: str):
         raise
 
 
+def _probe_token(session: "Session") -> None:
+    """Verify the captured token against the API before saving it.
+
+    A token can exist in localStorage while the server already considers it
+    revoked (logout elsewhere, server-side rotation). Saving it anyway means
+    discovering the problem hours later as a cryptic chat failure. The probe
+    creates a throwaway chat session (deleted right after) — if the server
+    rejects the token we fail loudly here instead.
+
+    Explicit auth rejection (401/403/auth markers) raises RuntimeError.
+    Anything else (network blip, 429, 5xx) only warns and lets the save
+    proceed — the client reports those properly at chat time.
+    """
+    if httpx is None:
+        return
+    try:
+        r = httpx.post(
+            "https://chat.deepseek.com/api/v0/chat_session/create",
+            json={},
+            headers={
+                "authorization": f"Bearer {session.token}",
+                "content-type": "application/json",
+                "user-agent": session.user_agent,
+                "origin": "https://chat.deepseek.com",
+                "referer": "https://chat.deepseek.com/",
+            },
+            cookies=session.cookies,
+            timeout=20.0,
+        )
+    except Exception as e:
+        print(f"[auth] warning: could not validate the token ({type(e).__name__}); "
+              "saving it anyway.")
+        return
+    body = r.text[:500]
+    auth_markers = (
+        "authorization failed", "invalid token", "unauthorized",
+        "token expired", "login required", "please log in",
+    )
+    if r.status_code in (401, 403) or any(m in body.lower() for m in auth_markers):
+        raise RuntimeError(
+            "The captured token was rejected by DeepSeek (invalid/expired).\n"
+            "Do a FULL logout + login in the browser window (avatar → sign out, "
+            "sign back in, send a test message on the site), then run this again."
+        )
+    # Token accepted — delete the throwaway probe session to avoid clutter.
+    try:
+        data = r.json()
+        cid = data.get("data", {}).get("biz_data", {}).get("chat_session", {}).get("id")
+        if cid:
+            httpx.post(
+                "https://chat.deepseek.com/api/v0/chat_session/delete",
+                json={"chat_session_id": cid},
+                headers={"authorization": f"Bearer {session.token}"},
+                cookies=session.cookies,
+                timeout=20.0,
+            )
+    except Exception:
+        pass
+
+
 def _capture_from_context(context, page) -> Optional[Session]:
     """Read token + cookies + UA off a logged-in page, or None if not signed in."""
     token = _safe_evaluate(page, _READ_TOKEN_JS)
@@ -303,6 +368,7 @@ def login(
             context.close()
         if session is None:
             raise RuntimeError("Logged in but could not read the token.")
+        _probe_token(session)
         session.save()
         return session
 

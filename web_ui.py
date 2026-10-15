@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from agent import Agent, build_system_prompt, get_privilege, execute_shell_blocks
 from deepseek.client import DeepSeekBackendError
+from deepseek.auth import LoginRequired
 
 app = FastAPI()
 
@@ -917,6 +918,11 @@ async def chat_endpoint(req: ChatRequest):
                 # Não é erro de conta, então não bloqueamos futuras tentativas.
                 # O usuário vê a mensagem e pode tentar de novo.
                 yield f"\n\n> ⚠️ **DeepSeek indisponível:** {e.detail}\n> *Tente novamente em alguns segundos.*\n"
+                break
+            except LoginRequired as e:
+                # Sessão revogada/expirada no servidor — o cache stale já foi
+                # apagado pelo cliente; o usuário precisa logar de novo.
+                yield f"\n\n> 🔑 **Sessão do DeepSeek inválida.**\n>\n> {e}\n"
                 break
             
             reply = "".join(full_reply)

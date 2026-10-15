@@ -28,12 +28,47 @@ from typing import Iterator, Optional
 
 import httpx
 
-from .auth import Session, get_session
+from .auth import DEFAULT_SESSION_FILE, LoginRequired, Session, get_session
 from .pow import DeepSeekPow
 from .safety import RequestGuard, SafetyTrip, is_account_protection_response
 
 BASE = "https://chat.deepseek.com"
 COMPLETION_PATH = "/api/v0/chat/completion"
+
+
+class _AuthFailure(RuntimeError):
+    """Internal signal: the server rejected our credentials.
+
+    Caught at the protocol-step level and converted into `LoginRequired`
+    (after deleting the stale cache file) — never shown raw to callers.
+    """
+
+
+_AUTH_MARKERS = (
+    "authorization failed",
+    "invalid token",
+    "unauthorized",
+    "token expired",
+    "token invalid",
+    "login required",
+    "please login",
+    "please log in",
+    "not logged in",
+)
+
+
+def _is_auth_failure(status: int, body: str = "") -> bool:
+    """True when the server is rejecting our credentials (not rate/WAF).
+
+    HTTP 401 is near-always auth. 403/429 stay on the account-protection path
+    unless the body carries an explicit auth marker — a bare 403 from DeepSeek
+    is usually WAF, and must keep tripping the guard instead of asking for a
+    useless relogin.
+    """
+    if status == 401:
+        return True
+    text = (body or "").lower()
+    return any(m in text for m in _AUTH_MARKERS)
 
 
 class DeepSeekBackendError(RuntimeError):
@@ -100,7 +135,10 @@ class Reply:
 def _biz(data: dict) -> dict:
     """Unwrap DeepSeek's `data.biz_data` envelope, raising on API-level errors."""
     if data.get("code") != 0:
-        raise RuntimeError(f"DeepSeek API error: {data.get('msg') or data}")
+        msg = str(data.get("msg") or data)
+        if _is_auth_failure(0, msg):
+            raise _AuthFailure(msg)
+        raise RuntimeError(f"DeepSeek API error: {msg}")
     biz = data.get("data", {}).get("biz_data")
     if biz is None:
         raise RuntimeError(f"Unexpected response shape: {data}")
@@ -147,14 +185,40 @@ class DeepSeekClient:
 
     # --- protocol steps -----------------------------------------------------
 
+    def _auth_failed(self) -> None:
+        """The server rejected our credentials: drop the stale cache (if it's
+        the one we're using) and tell the user to log in again.
+
+        Always raises `LoginRequired` — never returns.
+        """
+        try:
+            cached = Session.load(DEFAULT_SESSION_FILE)
+            if cached is not None and cached.token == self.session.token:
+                DEFAULT_SESSION_FILE.unlink()
+        except Exception:
+            pass
+        raise LoginRequired(
+            "DeepSeek rejected the saved session (invalid/expired token) — it was "
+            "revoked server-side, so its age doesn't matter. The stale cache was "
+            "deleted. Log in again by running:\n"
+            "    python -m deepseek.auth\n"
+            "For Google sign-in or CAPTCHA loops, use CDP mode:\n"
+            '    python -m deepseek.auth --cdp-url http://127.0.0.1:9222'
+        )
+
     def create_chat_session(self) -> str:
         self._request_guard.wait()
         r = self._http.post("/api/v0/chat_session/create", json={})
+        if _is_auth_failure(r.status_code, r.text[:1000]):
+            self._auth_failed()
         if is_account_protection_response(r.status_code, r.text):
             self._request_guard.trip(f"DeepSeek returned HTTP {r.status_code} during session creation; Cassandra stopped to avoid repeated account-security requests.")
             raise SafetyTrip(self._request_guard.reason)
         r.raise_for_status()
-        return _biz(r.json())["chat_session"]["id"]
+        try:
+            return _biz(r.json())["chat_session"]["id"]
+        except _AuthFailure:
+            self._auth_failed()
 
     def delete_chat_session(self, chat_session_id: str) -> bool:
         if not chat_session_id:
@@ -171,11 +235,16 @@ class DeepSeekClient:
         r = self._http.post(
             "/api/v0/chat/create_pow_challenge", json={"target_path": target_path}
         )
+        if _is_auth_failure(r.status_code, r.text[:1000]):
+            self._auth_failed()
         if is_account_protection_response(r.status_code, r.text):
             self._request_guard.trip(f"DeepSeek returned HTTP {r.status_code} while issuing a PoW challenge; Cassandra stopped instead of retrying.")
             raise SafetyTrip(self._request_guard.reason)
         r.raise_for_status()
-        challenge = _biz(r.json())["challenge"]
+        try:
+            challenge = _biz(r.json())["challenge"]
+        except _AuthFailure:
+            self._auth_failed()
         with self._pow_lock:
             return self._pow.make_header(challenge)
 
@@ -269,11 +338,16 @@ class _Stream:
         with self._client._http.stream(
             "POST", COMPLETION_PATH, json=body, headers=headers
         ) as resp:
+            if _is_auth_failure(resp.status_code, ""):
+                self._client._auth_failed()
             if is_account_protection_response(resp.status_code, ""):
                 self._client._request_guard.trip(f"DeepSeek returned HTTP {resp.status_code} during completion; Cassandra stopped instead of retrying.")
                 raise SafetyTrip(self._client._request_guard.reason)
             resp.raise_for_status()
-            yield from _parse_sse(resp.iter_lines(), meta)
+            try:
+                yield from _parse_sse(resp.iter_lines(), meta)
+            except _AuthFailure:
+                self._client._auth_failed()
         if meta.get("message_id") is not None:
             self._message_id = meta["message_id"]
 
@@ -316,8 +390,11 @@ def _parse_sse(lines, meta: Optional[dict] = None) -> Iterator[str]:
         # Error frame: the backend refused to generate. No "v" key, so it would
         # otherwise fall through every branch below and yield nothing.
         if isinstance(obj, dict) and obj.get("type") == "error":
+            content = str(obj.get("content") or "the server reported an unspecified error")
+            if _is_auth_failure(0, content + str(obj.get("finish_reason") or "")):
+                raise _AuthFailure(content)
             raise DeepSeekBackendError(
-                str(obj.get("content") or "the server reported an unspecified error"),
+                content,
                 str(obj.get("finish_reason") or ""),
             )
 
