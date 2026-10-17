@@ -262,6 +262,7 @@ def show_activity(limit: int = 25) -> None:
 # ============================================================
 
 class ANSI:
+    # Reset & modifiers
     RESET = "\033[0m"
     BOLD = "\033[1m"
     DIM = "\033[2m"
@@ -269,13 +270,42 @@ class ANSI:
     UNDERLINE = "\033[4m"
     STRIKE = "\033[9m"
 
+    # Foreground — standard
+    BLACK = "\033[30m"
     RED = "\033[31m"
-    BRIGHT_RED = "\033[91m"
-    DARK_RED = "\033[2;31m"
-    WHITE = "\033[97m"
-    GRAY = "\033[90m"
+    GREEN = "\033[32m"
     YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    GRAY = "\033[90m"
+
+    # Foreground — bright
+    BRIGHT_RED = "\033[91m"
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+    BRIGHT_CYAN = "\033[96m"
+    BRIGHT_WHITE = "\033[97m"
+
+    # Foreground — dark / muted
+    DARK_RED = "\033[2;31m"
+    DARK_GREEN = "\033[2;32m"
+    DARK_YELLOW = "\033[2;33m"
+    DARK_BLUE = "\033[2;34m"
+    DARK_MAGENTA = "\033[2;35m"
+    DARK_CYAN = "\033[2;36m"
+
+    # Backgrounds
     RED_BG = "\033[41m"
+    GREEN_BG = "\033[42m"
+    YELLOW_BG = "\033[43m"
+    BLUE_BG = "\033[44m"
+    MAGENTA_BG = "\033[45m"
+    CYAN_BG = "\033[46m"
+    WHITE_BG = "\033[47m"
 
     @classmethod
     def fmt(cls, text: str, fg: str = "", bold: bool = False) -> str:
@@ -295,19 +325,35 @@ class ANSI:
 
     @classmethod
     def ok(cls, text: str) -> str:
-        return cls.fmt(f"  ✔ {text}", cls.BRIGHT_RED, True)
+        return cls.fmt(f"  ✔ {text}", cls.BRIGHT_GREEN, True)
 
     @classmethod
     def err(cls, text: str) -> str:
-        return cls.fmt(f"  ✖ {text}", cls.RED, True)
+        return cls.fmt(f"  ✖ {text}", cls.BRIGHT_RED, True)
 
     @classmethod
     def info(cls, text: str) -> str:
-        return cls.fmt(f"  ◆ {text}", cls.BRIGHT_RED)
+        return cls.fmt(f"  ◆ {text}", cls.BRIGHT_CYAN)
 
     @classmethod
     def dim(cls, text: str) -> str:
         return cls.fmt(f"  {text}", cls.GRAY)
+
+    @classmethod
+    def warn(cls, text: str) -> str:
+        return cls.fmt(f"  ⚠ {text}", cls.BRIGHT_YELLOW, True)
+
+    @classmethod
+    def success(cls, text: str) -> str:
+        return cls.fmt(f"  ✓ {text}", cls.BRIGHT_GREEN, True)
+
+    @classmethod
+    def accent(cls, text: str) -> str:
+        return cls.fmt(text, cls.BRIGHT_MAGENTA, True)
+
+    @classmethod
+    def highlight(cls, text: str) -> str:
+        return cls.fmt(text, cls.BRIGHT_CYAN, True)
 
 
 # ============================================================
@@ -1610,7 +1656,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
         print(ANSI.fmt("└──────────────────────────────────────────", ANSI.YELLOW))
 
         if auto_execute:
-            print(ANSI.fmt("Execução automática ativada. Executando...", ANSI.YELLOW, True))
+            print(ANSI.warn("Execução automática ativada. Executando..."))
             decided = "auto"
         else:
             answer = input(
@@ -1618,7 +1664,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
             ).strip().lower()
 
             if answer not in {"s", "sim", "y", "yes"}:
-                print(ANSI.dim("Comando não executado."))
+                print(ANSI.warn("Comando não executado."))
                 log_activity("shell.skipped", command, "Usuário recusou a execução.")
                 continue
             decided = "confirmado"
@@ -1631,7 +1677,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
         )
 
         try:
-            print(ANSI.fmt("[saída em tempo real]", ANSI.YELLOW, True))
+            print(ANSI.highlight("[saída em tempo real]"))
             
             process = subprocess.Popen(
                 command,
@@ -1666,7 +1712,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
             def _reader() -> None:
                 try:
                     for line in process.stdout:  # type: ignore[union-attr]
-                        sys.stdout.write(ANSI.GRAY + line + ANSI.RESET)
+                        sys.stdout.write(ANSI.DARK_GREEN + line + ANSI.RESET)
                         sys.stdout.flush()
                         cmd_log.append(line)
                 except Exception:  # noqa: BLE001
@@ -1762,11 +1808,12 @@ def chat(agent: Agent, model: str, allow_shell: bool):
     user = getpass.getuser()
     privilege = "ROOT" if allow_shell else "USER"
 
-    print(ANSI.info("Interface Cassandra inicializada."))
+    print(ANSI.highlight("Interface Cassandra inicializada."))
     print(
-        ANSI.dim(
+        ANSI.fmt(
             "Markdown ativo • tema vermelho • Skillogy carregável • "
-            "PG integrada ao contexto"
+            "PG integrada ao contexto",
+            ANSI.BRIGHT_BLUE,
         )
     )
     print(
@@ -1782,19 +1829,18 @@ def chat(agent: Agent, model: str, allow_shell: bool):
         )
     )
     print(
-        ANSI.info(
+        ANSI.fmt(
             "  🌐 Busca na web ativada: Cassandra busca na internet quando "
-            "o assunto pede. Digite ':web <termo>' para buscar na web agora."
+            "o assunto pede. Digite ':web <termo>' para buscar na web agora.",
+            ANSI.BRIGHT_CYAN,
         )
     )
 
     if allow_shell:
         print(
-            ANSI.fmt(
-                "  ⚠ Execução de shell habilitada (--allow-shell). "
-                "A Cassandra executará livremente o que quiser sem pedir permissão.",
-                ANSI.YELLOW,
-                True,
+            ANSI.warn(
+                "Execução de shell habilitada (--allow-shell). "
+                "A Cassandra executará livremente o que quiser sem pedir permissão."
             )
         )
     else:
@@ -1888,7 +1934,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                 provider=os.getenv("CASSANDRA_PROVIDER", ""),
             )
             if matched_files:
-                print(ANSI.dim(f"  [Skills injetadas: {', '.join(matched_files)}]"))
+                print(ANSI.fmt(f"  [Skills injetadas: {', '.join(matched_files)}]", ANSI.BRIGHT_BLUE))
 
             # Registra o pedido do usuário no histórico persistente. Sem
             # isto, a compactação resumiria apenas as respostas e o fio
@@ -1963,10 +2009,8 @@ def chat(agent: Agent, model: str, allow_shell: bool):
 
                         if interrupted:
                             print(
-                                ANSI.fmt(
-                                    "  ⏹ Você interrompeu a resposta. Digite um novo prompt.",
-                                    ANSI.YELLOW,
-                                    True,
+                                ANSI.warn(
+                                    "Você interrompeu a resposta. Digite um novo prompt."
                                 )
                             )
                             break
@@ -1981,7 +2025,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                         retry_count += 1
                         if retry_count <= max_retries:
                             wait = 2 ** retry_count
-                            print(ANSI.fmt(f"  ⚠ Erro de conexão ({exc}). Tentativa {retry_count}/{max_retries} em {wait}s...", ANSI.YELLOW, True))
+                            print(ANSI.warn(f"Erro de conexão ({exc}). Tentativa {retry_count}/{max_retries} em {wait}s..."))
                             time.sleep(wait)
                             continue
                         else:
