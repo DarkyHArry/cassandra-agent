@@ -16,3 +16,4 @@ __pycache__/
 .curator_state
 .curator_ledger.jsonl
 .bundled_manifest
+cassandra-gui
