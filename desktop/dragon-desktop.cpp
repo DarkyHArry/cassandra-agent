@@ -97,7 +97,8 @@ static gboolean refresh_status(gpointer) {
       curl_easy_setopt(c, CURLOPT_WRITEDATA, &body); curl_easy_setopt(c, CURLOPT_CONNECTTIMEOUT, 2L);
       curl_easy_setopt(c, CURLOPT_TIMEOUT, 3L); curl_easy_setopt(c, CURLOPT_NOSIGNAL, 1L);
       CURLcode rc = curl_easy_perform(c); curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &code);
-      if (rc != CURLE_OK || code < 200 || code >= 300) body.clear(); curl_easy_cleanup(c);
+      if (rc != CURLE_OK || code < 200 || code >= 300) body.clear();
+      curl_easy_cleanup(c);
     }
     const bool connected = !body.empty();
     const bool shell = body.find("\"allow_shell\":true") != std::string::npos || body.find("\"allow_shell\": true") != std::string::npos;
@@ -165,13 +166,13 @@ static void activate(GtkApplication *app, gpointer) {
   endpoint_entry = gtk_entry_new(); gtk_editable_set_text(GTK_EDITABLE(endpoint_entry), "http://127.0.0.1:8080"); gtk_box_append(GTK_BOX(context), endpoint_entry);
   GtkWidget *note = gtk_label_new("A autonomia executa comandos com as permissões do seu usuário Linux. Use apenas tarefas e projetos confiáveis."); gtk_label_set_wrap(GTK_LABEL(note), TRUE); gtk_label_set_xalign(GTK_LABEL(note), 0); gtk_widget_add_css_class(note, "muted"); gtk_box_append(GTK_BOX(context), note); gtk_box_append(GTK_BOX(root), context);
   adw_style_manager_set_color_scheme(adw_style_manager_get_default(), ADW_COLOR_SCHEME_FORCE_DARK);
-  GtkCssProvider *provider = gtk_css_provider_new(); gtk_css_provider_load_from_string(provider, css);
+  GtkCssProvider *provider = gtk_css_provider_new(); gtk_css_provider_load_from_data(provider, css, -1);
   gtk_style_context_add_provider_for_display(gdk_display_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   adw_application_window_set_content(ADW_APPLICATION_WINDOW(window), root); gtk_window_present(GTK_WINDOW(window));
   g_timeout_add_seconds(5, refresh_status, nullptr); refresh_status(nullptr);
 }
 int main(int argc, char **argv) {
-  curl_global_init(CURL_GLOBAL_DEFAULT); AdwApplication *app = adw_application_new("io.github.darkyharry.CassandraSecurity", G_APPLICATION_DEFAULT_FLAGS);
+  curl_global_init(CURL_GLOBAL_DEFAULT); AdwApplication *app = adw_application_new("io.github.darkyharry.CassandraSecurity", G_APPLICATION_FLAGS_NONE);
   g_signal_connect(app, "activate", G_CALLBACK(activate), nullptr); int result = g_application_run(G_APPLICATION(app), argc, argv);
   g_object_unref(app); curl_global_cleanup(); return result;
 }
