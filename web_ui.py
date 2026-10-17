@@ -952,9 +952,34 @@ HTML_CONTENT = r"""
             return String(ctx);
         }
 
+        let AVAILABLE_MODELS = [];
+
+        async function fetchAvailableModels() {
+            try {
+                const r = await fetch('/api/models?t=' + Date.now(), { cache: 'no-store' });
+                const data = await r.json();
+                AVAILABLE_MODELS = data.models || [];
+            } catch (e) {
+                AVAILABLE_MODELS = [];
+            }
+        }
+
         function refreshModels(providerKey) {
             const p = CATALOG.find(x => x.key === providerKey);
             modelSelect.innerHTML = '';
+
+            // Se há modelos disponíveis da API, usa-os; senão fallback estático
+            if (AVAILABLE_MODELS.length) {
+                AVAILABLE_MODELS.forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id;
+                    const ctxStr = m.context_window ? ' (' + fmtCtx(m.context_window) + ' ctx)' : '';
+                    opt.textContent = m.id + ctxStr;
+                    modelSelect.appendChild(opt);
+                });
+                return;
+            }
+
             const models = (p && p.models) ? p.models : [];
             if (!models.length) {
                 const opt = document.createElement('option');
@@ -1039,6 +1064,13 @@ HTML_CONTENT = r"""
                 configModal.style.display = 'none';
                 apiKeyInput.value = '';
                 await updateStatus();
+                // Busca modelos disponíveis da API após configurar
+                await fetchAvailableModels();
+                if (FORCED_PROVIDER) {
+                    refreshModels(FORCED_PROVIDER);
+                } else if (data.provider) {
+                    refreshModels(data.provider);
+                }
                 addMessage('**Configuração aplicada.** ' + (data.message || ''), 'cassandra');
             } else {
                 alert('Falha: ' + (data.message || 'erro desconhecido'));
@@ -1763,6 +1795,65 @@ async def get_providers():
     if not CORE_OK:
         return {"providers": [], "error": _CORE_ERR}
     return {"providers": provider_catalog()}
+
+
+@app.get("/api/models")
+async def get_available_models():
+    """
+    Retorna os modelos efetivamente disponíveis para a credencial ativa.
+
+    Consulta GET /v1/models no endpoint do provedor e cruza com o
+    catálogo local. Assim a web mostra apenas modelos que a conta do
+    usuário realmente pode invocar — não a lista estática do código.
+    """
+    if not CORE_OK:
+        return {"models": [], "error": _CORE_ERR}
+
+    creds = _active_credentials()
+    if not creds:
+        return {"models": [], "error": "no credentials"}
+
+    cred = creds[0]
+    try:
+        import httpx
+        headers = {"Authorization": f"Bearer {cred.api_key}"}
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                f"{cred.base_url}/models", headers=headers
+            )
+        if resp.status_code != 200:
+            return {
+                "models": [],
+                "error": f"HTTP {resp.status_code}: {resp.text[:200]}",
+            }
+        data = resp.json()
+        api_models = [m.get("id", "") for m in data.get("data", [])]
+        if not api_models:
+            return {"models": [], "error": "empty response"}
+
+        # Cruza com o catálogo local para enriquecer com context_window
+        catalog = provider_catalog()
+        provider_info = next(
+            (p for p in catalog if p["key"] == cred.provider_key), {}
+        )
+        model_ctx = {}
+        for p in catalog:
+            for m in p.get("models", []):
+                model_ctx[m] = p.get("context_window", 128000)
+
+        # Preserva a ordem da API, adiciona context_window quando conhecido
+        result = []
+        for m in api_models:
+            ctx = model_ctx.get(m)
+            entry = {"id": m}
+            if ctx:
+                entry["context_window"] = ctx
+            result.append(entry)
+
+        return {"models": result, "provider": cred.provider_key}
+
+    except Exception as exc:
+        return {"models": [], "error": str(exc)}
 
 
 @app.get("/api/status")
