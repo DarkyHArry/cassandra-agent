@@ -203,12 +203,20 @@ class CassandraClient:
         # Silêncio máximo tolerado entre chunks do stream, em segundos.
         # Independente do timeout do httpx: aqui medimos o intervalo entre
         # chunks recebidos, não o tempo total da requisição.
+        # Default: 120s (era 45s — modelos lentos com contexto grande
+        # podem demorar mais entre chunks sem estar travados).
         self.stream_idle_timeout = float(
-            os.getenv("CASSANDRA_STREAM_IDLE_TIMEOUT", "45")
+            os.getenv("CASSANDRA_STREAM_IDLE_TIMEOUT", "120")
         )
         # Tempo máximo total de um stream (rede de segurança).
-        self.stream_total_timeout = float(
-            os.getenv("CASSANDRA_STREAM_TOTAL_TIMEOUT", "600")
+        # Default: 3600s (1h — era 600s). Defina como "0" para desabilitar.
+        _raw_total = os.getenv("CASSANDRA_STREAM_TOTAL_TIMEOUT", "3600")
+        try:
+            _total_val = float(_raw_total)
+        except ValueError:
+            _total_val = 3600.0
+        self.stream_total_timeout = (
+            float("inf") if _total_val <= 0 else _total_val
         )
         self.last_report: Dict = {}
         self.last_guard_report: Dict = {}

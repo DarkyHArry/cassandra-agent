@@ -47,17 +47,45 @@ from typing import Dict, List, Optional
 # ---------------------------------------------------------------------------
 
 def compact_after() -> int:
+    """Número de mensagens que dispara a compactação.
+
+    Se CASSANDRA_COMPACT_AFTER não estiver definido, calcula
+    automaticamente com base na janela de contexto do modelo ativo.
+    """
     try:
-        return max(4, int(os.getenv("CASSANDRA_COMPACT_AFTER", "16")))
+        val = int(os.getenv("CASSANDRA_COMPACT_AFTER", ""))
+        if val > 0:
+            return val
     except ValueError:
-        return 16
+        pass
+    # Fallback: estima baseado no contexto do modelo
+    return _estimate_compact_after()
 
 
 def compact_keep() -> int:
+    """Mensagens recentes preservadas durante a compactação."""
     try:
         return max(2, int(os.getenv("CASSANDRA_COMPACT_KEEP", "6")))
     except ValueError:
         return 6
+
+
+def _estimate_compact_after() -> int:
+    """
+    Estima o número de mensagens antes de compactar, baseado na
+    janela de contexto do modelo ativo.
+
+    Heurística: assume ~500 tokens por mensagem (média de conversa
+    técnica) e compacta quando atinge 60% da janela.
+    """
+    try:
+        from cassandra.providers import get_context_window
+        model = os.getenv("CASSANDRA_MODEL", "").strip()
+        ctx = get_context_window(model) if model else 128_000
+        # 60% da janela / ~500 tokens por mensagem
+        return max(4, int((ctx * 0.6) / 500))
+    except Exception:
+        return 16
 
 
 def compact_model() -> str:

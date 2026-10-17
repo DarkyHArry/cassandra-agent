@@ -262,6 +262,14 @@ def show_activity(limit: int = 25) -> None:
 # ============================================================
 
 class ANSI:
+    """Códigos ANSI com detecção automática de suporte.
+
+    No Windows, conhost.exe só entende ANSI se VirtualTerminalLevel=1
+    (registro) ou se rodar dentro do Windows Terminal. Sem isso, os
+    códigos aparecem como lixo na tela. Detecta e desabilita.
+    """
+
+    # Reset & modifiers
     RESET = "\033[0m"
     BOLD = "\033[1m"
     DIM = "\033[2m"
@@ -269,16 +277,118 @@ class ANSI:
     UNDERLINE = "\033[4m"
     STRIKE = "\033[9m"
 
+    # Foreground — standard
+    BLACK = "\033[30m"
     RED = "\033[31m"
-    BRIGHT_RED = "\033[91m"
-    DARK_RED = "\033[2;31m"
-    WHITE = "\033[97m"
-    GRAY = "\033[90m"
+    GREEN = "\033[32m"
     YELLOW = "\033[33m"
+    BLUE = "\033[34m"
+    MAGENTA = "\033[35m"
+    CYAN = "\033[36m"
+    WHITE = "\033[37m"
+    GRAY = "\033[90m"
+
+    # Foreground — bright
+    BRIGHT_RED = "\033[91m"
+    BRIGHT_GREEN = "\033[92m"
+    BRIGHT_YELLOW = "\033[93m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_MAGENTA = "\033[95m"
+    BRIGHT_CYAN = "\033[96m"
+    BRIGHT_WHITE = "\033[97m"
+
+    # Foreground — dark / muted
+    DARK_RED = "\033[2;31m"
+    DARK_GREEN = "\033[2;32m"
+    DARK_YELLOW = "\033[2;33m"
+    DARK_BLUE = "\033[2;34m"
+    DARK_MAGENTA = "\033[2;35m"
+    DARK_CYAN = "\033[2;36m"
+
+    # Backgrounds
     RED_BG = "\033[41m"
+    GREEN_BG = "\033[42m"
+    YELLOW_BG = "\033[43m"
+    BLUE_BG = "\033[44m"
+    MAGENTA_BG = "\033[45m"
+    CYAN_BG = "\033[46m"
+    WHITE_BG = "\033[47m"
+
+    # Suporte a ANSI detectado em runtime
+    _enabled: bool = True
+
+    @classmethod
+    def _detect_support(cls) -> bool:
+        """Detecta se o terminal suporta ANSI escape sequences."""
+        # Desabilitado por ambiente
+        if os.getenv("NO_COLOR", "").strip():
+            return False
+        if os.getenv("TERM", "") == "dumb":
+            return False
+        # Windows: verifica se é Windows Terminal ou se VirtualTerminalLevel=1
+        if os.name == "nt":
+            # Windows Terminal define WT_SESSION
+            if os.getenv("WT_SESSION"):
+                return True
+            # Verifica registro VirtualTerminalLevel
+            try:
+                import winreg
+                with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER, r"Console"
+                ) as key:
+                    val, _ = winreg.QueryValueEx(key, "VirtualTerminalLevel")
+                    return bool(val)
+            except Exception:
+                return False
+        # Unix: assume suporte (xterm, linux console, etc.)
+        return True
+
+    @classmethod
+    def init(cls) -> None:
+        """Inicializa detecção de suporte ANSI. Chamar uma vez no início."""
+        cls._enabled = cls._detect_support()
+        if not cls._enabled:
+            # Limpa todos os códigos
+            cls.RESET = ""
+            cls.BOLD = ""
+            cls.DIM = ""
+            cls.ITALIC = ""
+            cls.UNDERLINE = ""
+            cls.STRIKE = ""
+            cls.BLACK = ""
+            cls.RED = ""
+            cls.GREEN = ""
+            cls.YELLOW = ""
+            cls.BLUE = ""
+            cls.MAGENTA = ""
+            cls.CYAN = ""
+            cls.WHITE = ""
+            cls.GRAY = ""
+            cls.BRIGHT_RED = ""
+            cls.BRIGHT_GREEN = ""
+            cls.BRIGHT_YELLOW = ""
+            cls.BRIGHT_BLUE = ""
+            cls.BRIGHT_MAGENTA = ""
+            cls.BRIGHT_CYAN = ""
+            cls.BRIGHT_WHITE = ""
+            cls.DARK_RED = ""
+            cls.DARK_GREEN = ""
+            cls.DARK_YELLOW = ""
+            cls.DARK_BLUE = ""
+            cls.DARK_MAGENTA = ""
+            cls.DARK_CYAN = ""
+            cls.RED_BG = ""
+            cls.GREEN_BG = ""
+            cls.YELLOW_BG = ""
+            cls.BLUE_BG = ""
+            cls.MAGENTA_BG = ""
+            cls.CYAN_BG = ""
+            cls.WHITE_BG = ""
 
     @classmethod
     def fmt(cls, text: str, fg: str = "", bold: bool = False) -> str:
+        if not cls._enabled:
+            return text
         prefix = (cls.BOLD if bold else "") + fg
         return f"{prefix}{text}{cls.RESET}"
 
@@ -295,19 +405,35 @@ class ANSI:
 
     @classmethod
     def ok(cls, text: str) -> str:
-        return cls.fmt(f"  ✔ {text}", cls.BRIGHT_RED, True)
+        return cls.fmt(f"  ✔ {text}", cls.BRIGHT_GREEN, True)
 
     @classmethod
     def err(cls, text: str) -> str:
-        return cls.fmt(f"  ✖ {text}", cls.RED, True)
+        return cls.fmt(f"  ✖ {text}", cls.BRIGHT_RED, True)
 
     @classmethod
     def info(cls, text: str) -> str:
-        return cls.fmt(f"  ◆ {text}", cls.BRIGHT_RED)
+        return cls.fmt(f"  ◆ {text}", cls.BRIGHT_CYAN)
 
     @classmethod
     def dim(cls, text: str) -> str:
         return cls.fmt(f"  {text}", cls.GRAY)
+
+    @classmethod
+    def warn(cls, text: str) -> str:
+        return cls.fmt(f"  ⚠ {text}", cls.BRIGHT_YELLOW, True)
+
+    @classmethod
+    def success(cls, text: str) -> str:
+        return cls.fmt(f"  ✓ {text}", cls.BRIGHT_GREEN, True)
+
+    @classmethod
+    def accent(cls, text: str) -> str:
+        return cls.fmt(text, cls.BRIGHT_MAGENTA, True)
+
+    @classmethod
+    def highlight(cls, text: str) -> str:
+        return cls.fmt(text, cls.BRIGHT_CYAN, True)
 
 
 # ============================================================
@@ -1610,7 +1736,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
         print(ANSI.fmt("└──────────────────────────────────────────", ANSI.YELLOW))
 
         if auto_execute:
-            print(ANSI.fmt("Execução automática ativada. Executando...", ANSI.YELLOW, True))
+            print(ANSI.warn("Execução automática ativada. Executando..."))
             decided = "auto"
         else:
             answer = input(
@@ -1618,7 +1744,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
             ).strip().lower()
 
             if answer not in {"s", "sim", "y", "yes"}:
-                print(ANSI.dim("Comando não executado."))
+                print(ANSI.warn("Comando não executado."))
                 log_activity("shell.skipped", command, "Usuário recusou a execução.")
                 continue
             decided = "confirmado"
@@ -1631,7 +1757,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
         )
 
         try:
-            print(ANSI.fmt("[saída em tempo real]", ANSI.YELLOW, True))
+            print(ANSI.highlight("[saída em tempo real]"))
             
             process = subprocess.Popen(
                 command,
@@ -1651,13 +1777,22 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
             # (`tail -f`, serviço, prompt interativo, `nc` escutando)
             # bloqueava a thread para sempre — e na web isso aparecia como
             # a interface travada, sem nenhuma saída.
-            timeout_s = float(os.getenv("CASSANDRA_SHELL_TIMEOUT", "300"))
+            #
+            # Default: 1800s (30 min). Defina como "0" para desabilitar
+            # o timeout (comando roda até terminar — use com cuidado).
+            _raw_timeout = os.getenv("CASSANDRA_SHELL_TIMEOUT", "1800")
+            try:
+                timeout_s = float(_raw_timeout)
+            except ValueError:
+                timeout_s = 1800.0
+            if timeout_s <= 0:
+                timeout_s = float("inf")
             cmd_log: List[str] = []
 
             def _reader() -> None:
                 try:
                     for line in process.stdout:  # type: ignore[union-attr]
-                        sys.stdout.write(ANSI.GRAY + line + ANSI.RESET)
+                        sys.stdout.write(ANSI.DARK_GREEN + line + ANSI.RESET)
                         sys.stdout.flush()
                         cmd_log.append(line)
                 except Exception:  # noqa: BLE001
@@ -1670,6 +1805,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
             try:
                 # wait() com timeout dispara mesmo sem saída alguma,
                 # diferente de iterar o pipe (que bloqueia até vir linha).
+                # Se timeout_s for infinito, bloqueia sem limite.
                 process.wait(timeout=timeout_s)
             except subprocess.TimeoutExpired:
                 timed_out = True
@@ -1690,8 +1826,13 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
 
             output_str = "".join(cmd_log)
             if timed_out:
+                _timeout_display = (
+                    f"{timeout_s:.0f}s"
+                    if timeout_s != float("inf")
+                    else "∞ (desabilitado)"
+                )
                 aviso = (
-                    f"\n[!] Comando excedeu {timeout_s:.0f}s e foi "
+                    f"\n[!] Comando excedeu {_timeout_display} e foi "
                     f"encerrado à força (SIGKILL no grupo de processos).\n"
                     f"[!] Se o comando precisa de mais tempo, aumente "
                     f"CASSANDRA_SHELL_TIMEOUT.\n"
@@ -1747,11 +1888,12 @@ def chat(agent: Agent, model: str, allow_shell: bool):
     user = getpass.getuser()
     privilege = "ROOT" if allow_shell else "USER"
 
-    print(ANSI.info("Interface Cassandra inicializada."))
+    print(ANSI.highlight("Interface Cassandra inicializada."))
     print(
-        ANSI.dim(
+        ANSI.fmt(
             "Markdown ativo • tema vermelho • Skillogy carregável • "
-            "PG integrada ao contexto"
+            "PG integrada ao contexto",
+            ANSI.BRIGHT_BLUE,
         )
     )
     print(
@@ -1767,19 +1909,18 @@ def chat(agent: Agent, model: str, allow_shell: bool):
         )
     )
     print(
-        ANSI.info(
+        ANSI.fmt(
             "  🌐 Busca na web ativada: Cassandra busca na internet quando "
-            "o assunto pede. Digite ':web <termo>' para buscar na web agora."
+            "o assunto pede. Digite ':web <termo>' para buscar na web agora.",
+            ANSI.BRIGHT_CYAN,
         )
     )
 
     if allow_shell:
         print(
-            ANSI.fmt(
-                "  ⚠ Execução de shell habilitada (--allow-shell). "
-                "A Cassandra executará livremente o que quiser sem pedir permissão.",
-                ANSI.YELLOW,
-                True,
+            ANSI.warn(
+                "Execução de shell habilitada (--allow-shell). "
+                "A Cassandra executará livremente o que quiser sem pedir permissão."
             )
         )
     else:
@@ -1873,7 +2014,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                 provider=os.getenv("CASSANDRA_PROVIDER", ""),
             )
             if matched_files:
-                print(ANSI.dim(f"  [Skills injetadas: {', '.join(matched_files)}]"))
+                print(ANSI.fmt(f"  [Skills injetadas: {', '.join(matched_files)}]", ANSI.BRIGHT_BLUE))
 
             # Registra o pedido do usuário no histórico persistente. Sem
             # isto, a compactação resumiria apenas as respostas e o fio
@@ -1884,6 +2025,12 @@ def chat(agent: Agent, model: str, allow_shell: bool):
             # Roda AQUI, e não no meio da execução: neste ponto todo o
             # trabalho do turno anterior já terminou, então resumir o
             # histórico não interrompe nenhuma tarefa em andamento.
+            #
+            # A janela de contexto é calculada com base no modelo ATUAL,
+            # então se o usuário trocar de modelo, a compactação se adapta.
+            from cassandra.providers import get_context_window as _get_ctx
+            _ctx = _get_ctx(model)
+            _ctx_str = f"{_ctx:,}".replace(",", ".") if _ctx < 1_000_000 else f"{_ctx // 1_000_000}M"
             if _needs_compaction(conversation):
                 try:
                     _res = _compact(
@@ -1903,7 +2050,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                         ANSI.info(
                             f"\n  [!] Contexto compactado: "
                             f"{_res.removed} mensagens resumidas "
-                            f"({_how})."
+                            f"({_how}). Janela: {_ctx_str} tokens."
                         )
                     )
                     if _res.error:
@@ -1948,10 +2095,8 @@ def chat(agent: Agent, model: str, allow_shell: bool):
 
                         if interrupted:
                             print(
-                                ANSI.fmt(
-                                    "  ⏹ Você interrompeu a resposta. Digite um novo prompt.",
-                                    ANSI.YELLOW,
-                                    True,
+                                ANSI.warn(
+                                    "Você interrompeu a resposta. Digite um novo prompt."
                                 )
                             )
                             break
@@ -1966,7 +2111,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                         retry_count += 1
                         if retry_count <= max_retries:
                             wait = 2 ** retry_count
-                            print(ANSI.fmt(f"  ⚠ Erro de conexão ({exc}). Tentativa {retry_count}/{max_retries} em {wait}s...", ANSI.YELLOW, True))
+                            print(ANSI.warn(f"Erro de conexão ({exc}). Tentativa {retry_count}/{max_retries} em {wait}s..."))
                             time.sleep(wait)
                             continue
                         else:
@@ -2318,6 +2463,9 @@ def poll(agent: Agent, delay: float, model: str):
 
 
 def main():
+    # Detecta suporte a ANSI (PowerShell/conhost sem VT mostra lixo)
+    ANSI.init()
+
     # Ctrl+C deve encerrar de verdade: mata subprocessos ativos antes de
     # sair (comandos em sessão própria não recebem o SIGINT).
     install_shutdown_handlers()
@@ -2418,9 +2566,13 @@ def main():
 
     # Mostra o que foi detectado.
     for c in _creds:
+        from cassandra.providers import get_context_window
+        ctx = get_context_window(c.model)
+        ctx_str = f"{ctx:,}".replace(",", ".") if ctx < 1_000_000 else f"{ctx // 1_000_000}M"
         print(
             ANSI.dim(
                 f"  ◆ Provedor: {c.label}  |  modelo: {c.model or '(padrão)'}  "
+                f"|  contexto: {ctx_str} tokens  "
                 f"|  chave: ...{c.api_key[-4:]}"
             )
         )
