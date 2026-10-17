@@ -405,35 +405,55 @@ class ANSI:
 
     @classmethod
     def ok(cls, text: str) -> str:
-        return cls.fmt(f"  ✔ {text}", cls.BRIGHT_GREEN, True)
+        return cls.fmt(f"  [+] {text}", cls.BRIGHT_GREEN, True)
 
     @classmethod
     def err(cls, text: str) -> str:
-        return cls.fmt(f"  ✖ {text}", cls.BRIGHT_RED, True)
+        return cls.fmt(f"  [-] {text}", cls.BRIGHT_RED, True)
 
     @classmethod
     def info(cls, text: str) -> str:
-        return cls.fmt(f"  ◆ {text}", cls.BRIGHT_CYAN)
+        return cls.fmt(f"  [i] {text}", cls.BRIGHT_CYAN)
 
     @classmethod
     def dim(cls, text: str) -> str:
-        return cls.fmt(f"  {text}", cls.GRAY)
+        return cls.fmt(f"     {text}", cls.GRAY)
 
     @classmethod
     def warn(cls, text: str) -> str:
-        return cls.fmt(f"  ⚠ {text}", cls.BRIGHT_YELLOW, True)
+        return cls.fmt(f"  [!] {text}", cls.BRIGHT_YELLOW, True)
 
     @classmethod
     def success(cls, text: str) -> str:
-        return cls.fmt(f"  ✓ {text}", cls.BRIGHT_GREEN, True)
+        return cls.fmt(f"  [+] {text}", cls.BRIGHT_GREEN, True)
 
     @classmethod
     def accent(cls, text: str) -> str:
-        return cls.fmt(text, cls.BRIGHT_MAGENTA, True)
+        return cls.fmt(f"  [>] {text}", cls.BRIGHT_MAGENTA, True)
 
     @classmethod
     def highlight(cls, text: str) -> str:
-        return cls.fmt(text, cls.BRIGHT_CYAN, True)
+        return cls.fmt(f"  [*] {text}", cls.BRIGHT_CYAN, True)
+
+    @classmethod
+    def shell(cls, text: str) -> str:
+        return cls.fmt(f"  [$] {text}", cls.BRIGHT_YELLOW)
+
+    @classmethod
+    def skill(cls, text: str) -> str:
+        return cls.fmt(f"  [S] {text}", cls.BRIGHT_BLUE)
+
+    @classmethod
+    def tool(cls, text: str) -> str:
+        return cls.fmt(f"  [T] {text}", cls.BRIGHT_MAGENTA)
+
+    @classmethod
+    def web(cls, text: str) -> str:
+        return cls.fmt(f"  [W] {text}", cls.BRIGHT_CYAN)
+
+    @classmethod
+    def compact(cls, text: str) -> str:
+        return cls.fmt(f"  [C] {text}", cls.BRIGHT_YELLOW)
 
 
 # ============================================================
@@ -1677,7 +1697,7 @@ def kill_active_procs(verbose: bool = False) -> int:
                 pass
         unregister_proc(p)
     if verbose and mortos:
-        print(ANSI.err(f"[!] {mortos} subprocesso(s) encerrado(s) no shutdown."))
+        print(ANSI.err(f"{mortos} subprocesso(s) encerrado(s) no shutdown."))
     return mortos
 
 
@@ -1720,7 +1740,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
         return ""
 
     print()
-    print(ANSI.info("Blocos de shell encontrados na resposta."))
+    print(ANSI.shell("Blocos de shell encontrados na resposta."))
     full_output = []
 
     for index, command in enumerate(blocks, 1):
@@ -1757,7 +1777,7 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
         )
 
         try:
-            print(ANSI.highlight("[saída em tempo real]"))
+            print(ANSI.shell("[saída em tempo real]"))
             
             process = subprocess.Popen(
                 command,
@@ -1888,7 +1908,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
     user = getpass.getuser()
     privilege = "ROOT" if allow_shell else "USER"
 
-    print(ANSI.highlight("Interface Cassandra inicializada."))
+    print(ANSI.info("Interface Cassandra inicializada."))
     print(
         ANSI.fmt(
             "Markdown ativo • tema vermelho • Skillogy carregável • "
@@ -1971,7 +1991,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                 continue
 
             if prompt.lower() in {"sair", "exit", "quit", "q"}:
-                print(ANSI.info("Limpando rastros e encerrando sessão..."))
+                print(ANSI.dim("Limpando rastros e encerrando sessão..."))
                 agent.clear_session()
                 break
 
@@ -1985,7 +2005,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
             # forçar uma busca sem esperar a detecção automática.
             if prompt.lower().startswith(":web ") or prompt.lower().startswith(":w "):
                 search_term = prompt.split(" ", 1)[1].strip() if " " in prompt else prompt
-                print(ANSI.info(f"  🔍 Buscando na web: {search_term}"))
+                print(ANSI.web(f"Buscando na web: {search_term}"))
                 log_activity("web.search", search_term, "Busca explícita via :web")
 
                 web_result = web_search_and_fetch(search_term, max_results=10)
@@ -2056,7 +2076,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                     if _res.error:
                         print(ANSI.dim(f"      motivo do fallback: {_res.error}"))
                 except Exception as _exc:
-                    print(ANSI.dim(f"  [!] Compactação falhou: {_exc}"))
+                    print(ANSI.compact(f"Compactação falhou: {_exc}"))
 
             # === Constrói mensagens com contexto persistente ===
             messages = rebuild_messages(prompt, dynamic_skillogy)
@@ -2115,7 +2135,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                             time.sleep(wait)
                             continue
                         else:
-                            print(ANSI.err(f"  ✗ Falha após {max_retries} tentativas: {exc}"))
+                            print(ANSI.err(f"Falha após {max_retries} tentativas: {exc}"))
                             break
                     except Exception as exc:
                         if _ProviderBlocked is not None and isinstance(exc, _ProviderBlocked):
@@ -2189,11 +2209,9 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                                 tname = spec.get("name", "?")
                                 tsrc = spec.get("source", "?")
                                 print(
-                                    ANSI.fmt(
-                                        f"  🔧 Cassandra solicitou ferramenta: "
-                                        f"{tname} (via {tsrc})",
-                                        ANSI.YELLOW,
-                                        True,
+                                    ANSI.tool(
+                                        f"Cassandra solicitou ferramenta: "
+                                        f"{tname} (via {tsrc})"
                                     )
                                 )
                                 try:
@@ -2253,11 +2271,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                             if not query:
                                 continue
                             print(
-                                ANSI.fmt(
-                                    f"  🧠 Cassandra solicitou a skill: {query}",
-                                    ANSI.YELLOW,
-                                    True,
-                                )
+                                ANSI.skill(f"Cassandra solicitou a skill: {query}")
                             )
                             content, loaded = agent._skill_index.load(query)
                             if content:
@@ -2288,7 +2302,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                             if not query:
                                 continue
                             print()
-                            print(ANSI.fmt(f"  🌐 Cassandra buscando na web autonomamente: {query}", ANSI.YELLOW, True))
+                            print(ANSI.web(f"Cassandra buscando na web autonomamente: {query}"))
                             log_activity("web.search.auto", query, "Busca autônoma solicitada pelo modelo")
                             
                             try:
@@ -2318,7 +2332,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                     break
 
         except (KeyboardInterrupt, EOFError):
-            print("\n" + ANSI.info("Sessão encerrada."))
+            print(ANSI.dim("Sessão encerrada."))
             break
 
 
