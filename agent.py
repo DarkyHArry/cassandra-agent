@@ -262,6 +262,13 @@ def show_activity(limit: int = 25) -> None:
 # ============================================================
 
 class ANSI:
+    """Códigos ANSI com detecção automática de suporte.
+
+    No Windows, conhost.exe só entende ANSI se VirtualTerminalLevel=1
+    (registro) ou se rodar dentro do Windows Terminal. Sem isso, os
+    códigos aparecem como lixo na tela. Detecta e desabilita.
+    """
+
     # Reset & modifiers
     RESET = "\033[0m"
     BOLD = "\033[1m"
@@ -307,8 +314,81 @@ class ANSI:
     CYAN_BG = "\033[46m"
     WHITE_BG = "\033[47m"
 
+    # Suporte a ANSI detectado em runtime
+    _enabled: bool = True
+
+    @classmethod
+    def _detect_support(cls) -> bool:
+        """Detecta se o terminal suporta ANSI escape sequences."""
+        # Desabilitado por ambiente
+        if os.getenv("NO_COLOR", "").strip():
+            return False
+        if os.getenv("TERM", "") == "dumb":
+            return False
+        # Windows: verifica se é Windows Terminal ou se VirtualTerminalLevel=1
+        if os.name == "nt":
+            # Windows Terminal define WT_SESSION
+            if os.getenv("WT_SESSION"):
+                return True
+            # Verifica registro VirtualTerminalLevel
+            try:
+                import winreg
+                with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER, r"Console"
+                ) as key:
+                    val, _ = winreg.QueryValueEx(key, "VirtualTerminalLevel")
+                    return bool(val)
+            except Exception:
+                return False
+        # Unix: assume suporte (xterm, linux console, etc.)
+        return True
+
+    @classmethod
+    def init(cls) -> None:
+        """Inicializa detecção de suporte ANSI. Chamar uma vez no início."""
+        cls._enabled = cls._detect_support()
+        if not cls._enabled:
+            # Limpa todos os códigos
+            cls.RESET = ""
+            cls.BOLD = ""
+            cls.DIM = ""
+            cls.ITALIC = ""
+            cls.UNDERLINE = ""
+            cls.STRIKE = ""
+            cls.BLACK = ""
+            cls.RED = ""
+            cls.GREEN = ""
+            cls.YELLOW = ""
+            cls.BLUE = ""
+            cls.MAGENTA = ""
+            cls.CYAN = ""
+            cls.WHITE = ""
+            cls.GRAY = ""
+            cls.BRIGHT_RED = ""
+            cls.BRIGHT_GREEN = ""
+            cls.BRIGHT_YELLOW = ""
+            cls.BRIGHT_BLUE = ""
+            cls.BRIGHT_MAGENTA = ""
+            cls.BRIGHT_CYAN = ""
+            cls.BRIGHT_WHITE = ""
+            cls.DARK_RED = ""
+            cls.DARK_GREEN = ""
+            cls.DARK_YELLOW = ""
+            cls.DARK_BLUE = ""
+            cls.DARK_MAGENTA = ""
+            cls.DARK_CYAN = ""
+            cls.RED_BG = ""
+            cls.GREEN_BG = ""
+            cls.YELLOW_BG = ""
+            cls.BLUE_BG = ""
+            cls.MAGENTA_BG = ""
+            cls.CYAN_BG = ""
+            cls.WHITE_BG = ""
+
     @classmethod
     def fmt(cls, text: str, fg: str = "", bold: bool = False) -> str:
+        if not cls._enabled:
+            return text
         prefix = (cls.BOLD if bold else "") + fg
         return f"{prefix}{text}{cls.RESET}"
 
@@ -2383,6 +2463,9 @@ def poll(agent: Agent, delay: float, model: str):
 
 
 def main():
+    # Detecta suporte a ANSI (PowerShell/conhost sem VT mostra lixo)
+    ANSI.init()
+
     # Ctrl+C deve encerrar de verdade: mata subprocessos ativos antes de
     # sair (comandos em sessão própria não recebem o SIGINT).
     install_shutdown_handlers()
