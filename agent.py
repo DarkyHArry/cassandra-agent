@@ -1920,42 +1920,79 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                 thinking = None
                 response = None
                 interrupted = False
+                retry_count = 0
+                max_retries = 3
 
-                try:
-                    thinking = ThinkingAnimation()
-                    thinking.start()
-                    esc.start()
+                while retry_count <= max_retries:
+                    try:
+                        thinking = ThinkingAnimation()
+                        thinking.start()
+                        esc.start()
 
-                    response = agent.chat_stream(messages=messages, model=model)
+                        response = agent.chat_stream(messages=messages, model=model)
 
-                    thinking.stop()
+                        thinking.stop()
 
-                    print()
-                    reply = stream_and_render_markdown(
-                        stream_api_response(response),
-                        interrupt=esc,
-                    )
-
-                    if esc.triggered:
-                        interrupted = True
-                        if response is not None:
-                            response.close()
-
-                    esc.stop()
-
-                    if interrupted:
-                        print(
-                            ANSI.fmt(
-                                "  ⏹ Você interrompeu a resposta. Digite um novo prompt.",
-                                ANSI.YELLOW,
-                                True,
-                            )
+                        print()
+                        reply = stream_and_render_markdown(
+                            stream_api_response(response),
+                            interrupt=esc,
                         )
+
+                        if esc.triggered:
+                            interrupted = True
+                            if response is not None:
+                                response.close()
+
+                        esc.stop()
+
+                        if interrupted:
+                            print(
+                                ANSI.fmt(
+                                    "  ⏹ Você interrompeu a resposta. Digite um novo prompt.",
+                                    ANSI.YELLOW,
+                                    True,
+                                )
+                            )
+                            break
+
+                        if not reply:
+                            print(ANSI.err("A API retornou uma resposta vazia."))
+                            break
+
+                        break  # sucesso, sai do loop de retry
+
+                    except (urllib.error.URLError, socket.timeout, TimeoutError, ConnectionError) as exc:
+                        retry_count += 1
+                        if retry_count <= max_retries:
+                            wait = 2 ** retry_count
+                            print(ANSI.fmt(f"  ⚠ Erro de conexão ({exc}). Tentativa {retry_count}/{max_retries} em {wait}s...", ANSI.YELLOW, True))
+                            time.sleep(wait)
+                            continue
+                        else:
+                            print(ANSI.err(f"  ✗ Falha após {max_retries} tentativas: {exc}"))
+                            break
+                    except Exception as exc:
+                        if _ProviderBlocked is not None and isinstance(exc, _ProviderBlocked):
+                            print(ANSI.err(f"Cassandra pausada por proteção anti-banimento: {exc}"))
+                            print(ANSI.dim("  Aguarde o cooldown ou adicione outra chave de API."))
+                            break
+                        if _AllProvidersExhausted is not None and isinstance(exc, _AllProvidersExhausted):
+                            print(ANSI.err(f"Provedores esgotados: {exc}"))
+                            print(ANSI.dim("  Verifique suas chaves de API no .env ou adicione outra."))
+                            break
+                        if _ProviderError is not None and isinstance(exc, _ProviderError):
+                            print(ANSI.err(f"Erro do provedor: {exc}"))
+                            print(ANSI.dim("  Verifique a chave, o modelo e o endpoint configurados."))
+                            break
+                        # Erro desconhecido: loga e continua
+                        print(ANSI.err(f"Erro inesperado: {exc}"))
+                        import traceback
+                        traceback.print_exc()
                         break
 
-                    if not reply:
-                        print(ANSI.err("A API retornou uma resposta vazia."))
-                        break
+                if interrupted or not reply:
+                    break
 
                     # === GUARDA ANTI-RECUSA ===
                     # A reescrita e o retry acontecem DENTRO do cliente
@@ -2134,49 +2171,6 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                             continue
 
                     break
-
-                except urllib.error.HTTPError as exc:
-                    body = exc.read().decode("utf-8", errors="replace")
-                    print(ANSI.err(f"Falha HTTP {exc.code} ao consultar a API."))
-                    print(ANSI.dim(body))
-                    break
-                except urllib.error.URLError as exc:
-                    print(ANSI.fmt("  ⚠ A API da Cassandra não respondeu corretamente.", ANSI.YELLOW, True))
-                    print(ANSI.dim(f"  {exc}"))
-                    print(ANSI.dim("  Dica: verifique sua conexão e envie o prompt novamente."))
-                    break
-                except (socket.timeout, TimeoutError, ConnectionError) as exc:
-                    print(ANSI.fmt("  ⚠ Tempo de resposta excedido (a API demorou demais).", ANSI.YELLOW, True))
-                    print(ANSI.dim(f"  {exc}"))
-                    print(ANSI.dim("  Dica: envie o mesmo prompt novamente, ou troque por algo mais curto."))
-                    break
-                except Exception as exc:
-                    if _ProviderBlocked is not None and isinstance(exc, _ProviderBlocked):
-                        print(ANSI.err(f"Cassandra pausada por proteção anti-banimento: {exc}"))
-                        print(ANSI.dim("  Aguarde o cooldown ou adicione outra chave de API."))
-                        break
-                    if _AllProvidersExhausted is not None and isinstance(exc, _AllProvidersExhausted):
-                        print(ANSI.err(f"Provedores esgotados: {exc}"))
-                        print(ANSI.dim("  Verifique suas chaves de API no .env ou adicione outra."))
-                        break
-                    if _ProviderError is not None and isinstance(exc, _ProviderError):
-                        print(ANSI.err(f"Erro do provedor: {exc}"))
-                        print(ANSI.dim("  Verifique a chave, o modelo e o endpoint configurados."))
-                        break
-                    print(ANSI.err(f"Erro ao consultar a Cassandra: {exc}"))
-                    break
-                finally:
-                    # Garante que o terminal e a conexão sejam sempre
-                    # liberados, mesmo em interrupção (ex.: Ctrl+C).
-                    if thinking is not None:
-                        thinking.stop()
-                    if esc is not None:
-                        esc.stop()
-                    if response is not None:
-                        try:
-                            response.close()
-                        except Exception:
-                            pass
 
         except (KeyboardInterrupt, EOFError):
             print("\n" + ANSI.info("Sessão encerrada."))
