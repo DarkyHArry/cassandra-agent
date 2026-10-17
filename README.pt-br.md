@@ -121,6 +121,43 @@ OPENAI_API_KEY="sk-proj-..."
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
+### Windows (PowerShell)
+
+```powershell
+# 1. Instale o Python 3.10+ em https://www.python.org/downloads/
+#    (marque "Add python.exe to PATH" durante a instalação)
+
+# 2. Clone e configure
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+
+# 3. Crie o ambiente virtual
+python -m venv .venv
+
+# 4. Ative o ambiente virtual
+#    PowerShell:
+.\.venv\Scripts\Activate.ps1
+#    CMD:
+.venv\Scripts\activate.bat
+
+#    Se o PowerShell bloquear a execução, rode antes:
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+# 5. Instale as dependências
+pip install -r requirements.txt
+
+# 6. Configure
+copy .env.example .env
+# Edite o .env e cole sua chave de API
+
+# 7. Execute
+python agent.py              # CLI
+python agent.py --web        # Interface Web (http://localhost:8080)
+python agent.py --web --allow-shell  # Web com execução de shell
+```
+
+> **Nota:** No Windows, use **Windows Terminal** ou **PowerShell 7+** para suporte correto a cores ANSI. `cmd.exe` legado e Windows PowerShell 5.1 podem não renderizar cores corretamente — a ferramenta detecta automaticamente e desabilita as cores quando não suportado.
+
 ### macOS
 
 ```bash
