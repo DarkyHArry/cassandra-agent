@@ -123,7 +123,8 @@ button.send:disabled{opacity:.5}.status{color:#65dfa0;font-size:12px}
 static void clear_chat(GtkButton*, gpointer) {
   if (busy) return;
   const std::string api = endpoint_url();
-  gtk_list_box_remove_all(GTK_LIST_BOX(chat_view));
+  GtkWidget *child = gtk_widget_get_first_child(chat_view);
+  while (child) { GtkWidget *next = gtk_widget_get_next_sibling(child); gtk_list_box_remove(GTK_LIST_BOX(chat_view), child); child = next; }
   add_message("Conversa limpa. Pode enviar uma nova tarefa.", false);
   std::thread([api] {
     CURL *c = curl_easy_init();
