@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=Dragão — Cassandra Agent
-Comment=Interface desktop para o agente Cassandra
-Exec=dragon-cassandra
+Name=Cassandra Security
+Comment=Interface desktop do agente Cassandra
+Exec=cassandra-security
 Icon=applications-system
 Terminal=false
 Categories=Development;Utility;
