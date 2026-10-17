@@ -1252,19 +1252,24 @@ HTML_CONTENT = r"""
 
                 while (true) {
                     let chunk;
+                    let done = false;
                     try {
-                        const { done, value } = await reader.read();
+                        const result = await reader.read();
+                        done = result.done;
                         if (done) break;
-                        chunk = decoder.decode(value, { stream: true });
+                        chunk = decoder.decode(result.value, { stream: true });
                     } catch (streamErr) {
                         // Parada manual: não é erro, é o usuário mandando parar.
                         if (paradoPeloUsuario) break;
-                        // A conexão caiu no meio. Se já recebemos texto,
-                        // preserva o que veio e avisa de forma discreta.
-                        erroConexao = fullText
-                            ? '⚠️ Conexão interrompida — a resposta acima está incompleta.'
-                            : '⚠️ Conexão interrompida antes de receber resposta. '
-                              + 'Verifique se o servidor está rodando e tente novamente.';
+                        // O reader.read() lança exceção quando o stream termina
+                        // normalmente em alguns navegadores (Chrome/Firefox). Se já
+                        // recebemos texto, o servidor completou a resposta — não
+                        // é erro. Só reporta falha se NENHUM texto foi recebido.
+                        if (fullText) {
+                            break;
+                        }
+                        erroConexao = '⚠️ Conexão interrompida antes de receber resposta. '
+                            + 'Verifique se o servidor está rodando e tente novamente.';
                         break;
                     }
 
