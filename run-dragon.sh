@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")"
-[[ -x build/dragon-cassandra ]] || { echo "Execute primeiro: ./desktop/build-debian.sh"; exit 1; }
+[[ -x build/cassandra-security ]] || { echo "Execute primeiro: ./desktop/build-debian.sh"; exit 1; }
 [[ -x .venv/bin/python ]] || { echo "Prepare: python3 -m venv .venv && .venv/bin/pip install -r requirements.txt"; exit 1; }
 backend_pid=""
 if ! curl -fsS http://127.0.0.1:8080/api/status >/dev/null 2>&1; then
@@ -17,6 +17,6 @@ if ! curl -fsS http://127.0.0.1:8080/api/status >/dev/null 2>&1; then
   done
   [[ "$ready" -eq 1 ]] || { echo "Timeout aguardando a API em http://127.0.0.1:8080"; exit 1; }
 else
-  echo "Backend já ativo. A interface usará as permissões e o modo desse processo existente."
+  echo "Backend já ativo; a interface respeitará as permissões e o modo desse processo."
 fi
-./build/dragon-cassandra
+./build/cassandra-security
