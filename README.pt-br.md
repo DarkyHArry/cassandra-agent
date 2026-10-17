@@ -16,6 +16,11 @@
   ⚠️ **REPOSITÓRIO ÚNICO E OFICIAL** ⚠️
 
   *Criado e desenvolvido por **Mörlsara***
+
+  <br>
+
+  ![Interface Web da Cassandra](model.png)
+  *Cassandra V3.0 — Interface Web com suporte multi-provedor*
 </div>
 
 ---
@@ -115,6 +120,34 @@ NVIDIA_API_KEY="nvapi-..."
 OPENAI_API_KEY="sk-proj-..."
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
+
+### macOS
+
+```bash
+# 1. Instale o Homebrew (se ainda não tiver)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. Instale o Python 3
+brew install python@3.12
+
+# 3. Clone e configure
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Configure
+cp .env.example .env
+# Edite o .env e cole sua chave de API
+
+# 5. Execute
+python agent.py              # CLI
+python agent.py --web        # Interface Web (http://localhost:8080)
+python agent.py --web --allow-shell  # Web com execução de shell
+```
+
+> **Nota:** No macOS, a flag `--allow-shell` concede à Cassandra permissão para executar comandos de shell. Use com cautela.
 
 ---
 

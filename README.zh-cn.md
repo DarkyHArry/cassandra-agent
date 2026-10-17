@@ -16,6 +16,11 @@
   ⚠️ **唯一官方仓库** ⚠️
 
   *由 **Mörlsara** 创建和编写*
+
+  <br>
+
+  ![Cassandra 网页界面](model.png)
+  *Cassandra V3.0 — 支持多提供商的网页界面*
 </div>
 
 ---
@@ -80,6 +85,34 @@ NVIDIA_API_KEY="nvapi-..."
 OPENAI_API_KEY="sk-proj-..."
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
+
+### macOS
+
+```bash
+# 1. 安装 Homebrew（如果尚未安装）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. 安装 Python 3
+brew install python@3.12
+
+# 3. 克隆并配置
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 4. 配置
+cp .env.example .env
+# 编辑 .env 并粘贴您的 API 密钥
+
+# 5. 运行
+python agent.py              # 命令行
+python agent.py --web        # 网页界面 (http://localhost:8080)
+python agent.py --web --allow-shell  # 带 shell 执行的网页界面
+```
+
+> **注意：** 在 macOS 上，`--allow-shell` 标志授予代理执行 shell 命令的权限。请谨慎使用。
 
 ---
 
