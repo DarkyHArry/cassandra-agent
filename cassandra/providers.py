@@ -46,6 +46,9 @@ class Provider:
     # Alguns provedores não aceitam o parâmetro "stream_options".
     supports_stream_options: bool = True
     notes: str = ""
+    # Janela de contexto padrão do provedor (tokens). Pode ser sobrescrita
+    # por modelo via MODEL_CONTEXT_WINDOWS.
+    context_window: int = 128000
 
 
 # ---------------------------------------------------------------------------
@@ -286,6 +289,108 @@ PROVIDERS: List[Provider] = [
 
 PROVIDER_MAP: Dict[str, Provider] = {p.key: p for p in PROVIDERS}
 
+# ---------------------------------------------------------------------------
+# JANELA DE CONTEXTO POR MODELO (tokens)
+# ---------------------------------------------------------------------------
+# Overrides por modelo. Quando um modelo não está aqui, usa o
+# context_window do provedor. Valores reais dos fabricantes.
+MODEL_CONTEXT_WINDOWS: Dict[str, int] = {
+    # NVIDIA NIM
+    "nvidia/nemotron-3-super-120b-a12b": 128_000,
+    "nvidia/nemotron-3-ultra-550b-a55b": 128_000,
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": 128_000,
+    "nvidia/nemotron-3.5-lightning-30b-a3b": 128_000,
+    "nvidia/llama-3.1-nemotron-70b-instruct": 128_000,
+    "meta/llama-3.2-11b-vision-instruct": 128_000,
+    "meta/llama-3.2-90b-vision-instruct": 128_000,
+    "deepseek-ai/deepseek-v4.1-flash": 128_000,
+    "stepfun-ai/step-5-preview": 1_000_000,
+    "stepfun-ai/step-3.7-flash": 128_000,
+    # DeepSeek
+    "deepseek-chat": 128_000,
+    "deepseek-reasoner": 128_000,
+    # Anthropic
+    "claude-sonnet-4-20250514": 200_000,
+    "claude-opus-4-20250514": 200_000,
+    "claude-3-7-sonnet-20250219": 200_000,
+    "claude-3-5-haiku-20241022": 200_000,
+    # OpenAI
+    "gpt-4o": 128_000,
+    "gpt-4o-mini": 128_000,
+    "gpt-4.1": 1_000_000,
+    "gpt-4.1-mini": 1_000_000,
+    "o3-mini": 200_000,
+    # OpenRouter
+    "deepseek/deepseek-chat": 128_000,
+    "deepseek/deepseek-r1": 128_000,
+    "anthropic/claude-sonnet-4": 200_000,
+    "openai/gpt-4o": 128_000,
+    "meta-llama/llama-3.3-70b-instruct": 128_000,
+    "qwen/qwen-2.5-72b-instruct": 128_000,
+    # Groq
+    "llama-3.3-70b-versatile": 128_000,
+    "llama-3.1-8b-instant": 128_000,
+    "deepseek-r1-distill-llama-70b": 128_000,
+    "qwen-2.5-32b": 128_000,
+    # xAI
+    "grok-2-latest": 128_000,
+    "grok-2-1212": 128_000,
+    "grok-beta": 128_000,
+    # Mistral
+    "mistral-large-latest": 128_000,
+    "mistral-medium-latest": 128_000,
+    "codestral-latest": 128_000,
+    "open-mixtral-8x22b": 128_000,
+    # Google
+    "gemini-2.0-flash": 1_000_000,
+    "gemini-1.5-pro": 2_000_000,
+    "gemini-1.5-flash": 1_000_000,
+    # Perplexity
+    "sonar-pro": 128_000,
+    "sonar": 128_000,
+    "sonar-reasoning": 128_000,
+    # Together
+    "deepseek-ai/DeepSeek-V3": 128_000,
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo": 128_000,
+    "Qwen/Qwen2.5-72B-Instruct-Turbo": 128_000,
+    # Fireworks
+    "accounts/fireworks/models/deepseek-v3": 128_000,
+    "accounts/fireworks/models/llama-v3p3-70b-instruct": 128_000,
+    # Cerebras
+    "llama-3.3-70b": 128_000,
+    "llama3.1-8b": 128_000,
+    "qwen-3-32b": 128_000,
+    # DeepInfra
+    "deepseek-ai/DeepSeek-V3": 128_000,
+    "meta-llama/Llama-3.3-70B-Instruct": 128_000,
+    # Hyperbolic
+    "deepseek-ai/DeepSeek-V3": 128_000,
+    "meta-llama/Llama-3.3-70B-Instruct": 128_000,
+    # SambaNova
+    "Meta-Llama-3.3-70B-Instruct": 128_000,
+    "DeepSeek-R1": 128_000,
+    # Ollama
+    "llama3.3": 128_000,
+    "qwen2.5-coder": 128_000,
+    "deepseek-r1": 128_000,
+}
+
+
+def get_context_window(model: str, provider: Optional[Provider] = None) -> int:
+    """
+    Retorna a janela de contexto (tokens) para um modelo.
+
+    Prioridade:
+      1. MODEL_CONTEXT_WINDOWS[model] — valor exato do fabricante
+      2. provider.context_window — fallback do provedor
+      3. 128_000 — default genérico
+    """
+    if model and model in MODEL_CONTEXT_WINDOWS:
+        return MODEL_CONTEXT_WINDOWS[model]
+    if provider is not None:
+        return provider.context_window
+    return 128_000
+
 
 # ---------------------------------------------------------------------------
 # AUTO-DETECÇÃO
@@ -373,6 +478,7 @@ def provider_catalog() -> List[Dict]:
             "env_var": p.env_var,
             "notes": p.notes,
             "detectable": bool(p.key_patterns),
+            "context_window": p.context_window,
         }
         for p in PROVIDERS
     ]

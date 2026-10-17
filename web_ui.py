@@ -834,7 +834,10 @@ HTML_CONTENT = r"""
                 const chip = document.createElement('div');
                 chip.className = 'provider-chip';
                 chip.dataset.key = p.key;
-                chip.innerHTML = p.label + (p.detectable ? '<span class="det">auto-detect</span>' : '<span class="det">manual</span>');
+                const ctxStr = p.context_window >= 1000000
+                    ? (p.context_window / 1000000) + 'M'
+                    : (p.context_window / 1000) + 'k';
+                chip.innerHTML = p.label + (p.detectable ? '<span class="det">auto-detect</span>' : '<span class="det">manual</span>') + '<span class="det">' + ctxStr + ' ctx</span>';
                 chip.addEventListener('click', () => {
                     FORCED_PROVIDER = (FORCED_PROVIDER === p.key) ? '' : p.key;
                     document.querySelectorAll('.provider-chip').forEach(c => c.classList.remove('active'));
@@ -881,6 +884,74 @@ HTML_CONTENT = r"""
         apiKeyInput.addEventListener('input', updateDetected);
 
         // ---------- SELETOR DE MODELOS ----------
+        const MODEL_CTX = {
+            'nvidia/nemotron-3-super-120b-a12b': 128000,
+            'nvidia/nemotron-3-ultra-550b-a55b': 128000,
+            'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning': 128000,
+            'nvidia/nemotron-3.5-lightning-30b-a3b': 128000,
+            'nvidia/llama-3.1-nemotron-70b-instruct': 128000,
+            'meta/llama-3.2-11b-vision-instruct': 128000,
+            'meta/llama-3.2-90b-vision-instruct': 128000,
+            'deepseek-ai/deepseek-v4.1-flash': 128000,
+            'stepfun-ai/step-5-preview': 1000000,
+            'stepfun-ai/step-3.7-flash': 128000,
+            'deepseek-chat': 128000,
+            'deepseek-reasoner': 128000,
+            'claude-sonnet-4-20250514': 200000,
+            'claude-opus-4-20250514': 200000,
+            'claude-3-7-sonnet-20250219': 200000,
+            'claude-3-5-haiku-20241022': 200000,
+            'gpt-4o': 128000,
+            'gpt-4o-mini': 128000,
+            'gpt-4.1': 1000000,
+            'gpt-4.1-mini': 1000000,
+            'o3-mini': 200000,
+            'deepseek/deepseek-chat': 128000,
+            'deepseek/deepseek-r1': 128000,
+            'anthropic/claude-sonnet-4': 200000,
+            'openai/gpt-4o': 128000,
+            'meta-llama/llama-3.3-70b-instruct': 128000,
+            'qwen/qwen-2.5-72b-instruct': 128000,
+            'llama-3.3-70b-versatile': 128000,
+            'llama-3.1-8b-instant': 128000,
+            'deepseek-r1-distill-llama-70b': 128000,
+            'qwen-2.5-32b': 128000,
+            'grok-2-latest': 128000,
+            'grok-2-1212': 128000,
+            'grok-beta': 128000,
+            'mistral-large-latest': 128000,
+            'mistral-medium-latest': 128000,
+            'codestral-latest': 128000,
+            'open-mixtral-8x22b': 128000,
+            'gemini-2.0-flash': 1000000,
+            'gemini-1.5-pro': 2000000,
+            'gemini-1.5-flash': 1000000,
+            'sonar-pro': 128000,
+            'sonar': 128000,
+            'sonar-reasoning': 128000,
+            'deepseek-ai/DeepSeek-V3': 128000,
+            'meta-llama/Llama-3.3-70B-Instruct-Turbo': 128000,
+            'Qwen/Qwen2.5-72B-Instruct-Turbo': 128000,
+            'accounts/fireworks/models/deepseek-v3': 128000,
+            'accounts/fireworks/models/llama-v3p3-70b-instruct': 128000,
+            'llama-3.3-70b': 128000,
+            'llama3.1-8b': 128000,
+            'qwen-3-32b': 128000,
+            'deepseek-ai/DeepSeek-V3': 128000,
+            'meta-llama/Llama-3.3-70B-Instruct': 128000,
+            'Meta-Llama-3.3-70B-Instruct': 128000,
+            'DeepSeek-R1': 128000,
+            'llama3.3': 128000,
+            'qwen2.5-coder': 128000,
+            'deepseek-r1': 128000,
+        };
+
+        function fmtCtx(ctx) {
+            if (ctx >= 1000000) return (ctx / 1000000) + 'M';
+            if (ctx >= 1000) return (ctx / 1000) + 'k';
+            return String(ctx);
+        }
+
         function refreshModels(providerKey) {
             const p = CATALOG.find(x => x.key === providerKey);
             modelSelect.innerHTML = '';
@@ -895,7 +966,8 @@ HTML_CONTENT = r"""
             models.forEach(m => {
                 const opt = document.createElement('option');
                 opt.value = m;
-                opt.textContent = m;
+                const ctx = MODEL_CTX[m] || p.context_window || 128000;
+                opt.textContent = m + ' (' + fmtCtx(ctx) + ' ctx)';
                 modelSelect.appendChild(opt);
             });
         }

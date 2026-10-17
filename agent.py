@@ -1945,6 +1945,12 @@ def chat(agent: Agent, model: str, allow_shell: bool):
             # Roda AQUI, e não no meio da execução: neste ponto todo o
             # trabalho do turno anterior já terminou, então resumir o
             # histórico não interrompe nenhuma tarefa em andamento.
+            #
+            # A janela de contexto é calculada com base no modelo ATUAL,
+            # então se o usuário trocar de modelo, a compactação se adapta.
+            from cassandra.providers import get_context_window as _get_ctx
+            _ctx = _get_ctx(model)
+            _ctx_str = f"{_ctx:,}".replace(",", ".") if _ctx < 1_000_000 else f"{_ctx // 1_000_000}M"
             if _needs_compaction(conversation):
                 try:
                     _res = _compact(
@@ -1964,7 +1970,7 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                         ANSI.info(
                             f"\n  [!] Contexto compactado: "
                             f"{_res.removed} mensagens resumidas "
-                            f"({_how})."
+                            f"({_how}). Janela: {_ctx_str} tokens."
                         )
                     )
                     if _res.error:
@@ -2477,9 +2483,13 @@ def main():
 
     # Mostra o que foi detectado.
     for c in _creds:
+        from cassandra.providers import get_context_window
+        ctx = get_context_window(c.model)
+        ctx_str = f"{ctx:,}".replace(",", ".") if ctx < 1_000_000 else f"{ctx // 1_000_000}M"
         print(
             ANSI.dim(
                 f"  ◆ Provedor: {c.label}  |  modelo: {c.model or '(padrão)'}  "
+                f"|  contexto: {ctx_str} tokens  "
                 f"|  chave: ...{c.api_key[-4:]}"
             )
         )
