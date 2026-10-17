@@ -1,0 +1,64 @@
+name: Build Cassandra Security (Debian x86_64)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, "feature/dragon-desktop-linux"]
+    paths:
+      - "desktop/**"
+      - "assets/**"
+      - ".github/workflows/build-cassandra-security.yml"
+  pull_request:
+    paths:
+      - "desktop/**"
+      - "assets/**"
+      - ".github/workflows/build-cassandra-security.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Install native dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config libgtk-4-dev libadwaita-1-dev libcurl4-openssl-dev
+      - name: Compile x86_64 binary
+        run: |
+          chmod +x desktop/build-debian.sh
+          ./desktop/build-debian.sh
+          file build/cassandra-security
+          ldd build/cassandra-security
+      - name: Package binary and runtime notes
+        run: |
+          mkdir -p dist
+          cp build/cassandra-security dist/
+          cp assets/cassandra.svg dist/
+          cat > dist/README-BINARY.txt <<'EOF'
+          Cassandra Security — Linux x86_64
+          
+          This is a dynamically linked Linux x86_64 binary built on Ubuntu 22.04.
+          It requires GTK4, libadwaita, libcurl and their runtime libraries.
+          It is not a self-contained AppImage and may need the matching runtime packages on Debian.
+          
+          Build from source on Debian:
+            sudo apt install build-essential pkg-config libgtk-4-dev libadwaita-1-dev libcurl4-openssl-dev
+            ./desktop/build-debian.sh
+          
+          Start the app through ./run-dragon.sh from the repository root so the Python backend is also prepared.
+          Shell autonomy runs as the current Linux user. Review the code before enabling it.
+          EOF
+          tar -czf cassandra-security-linux-x86_64.tar.gz -C dist .
+      - name: Upload downloadable binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cassandra-security-linux-x86_64
+          path: |
+            build/cassandra-security
+            cassandra-security-linux-x86_64.tar.gz
+          if-no-files-found: error
+          retention-days: 30
