@@ -1,9 +1,9 @@
 # Ignorar pastas de log e env
 logs/
-session/
 recon/
 .env
 __pycache__/
+*.pyc
 
 # Não ignorar a pasta skills se houver arquivos além de gitkeep
 !skills/

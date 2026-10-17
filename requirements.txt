@@ -1,9 +1,8 @@
-# Núcleo: cliente DeepSeek (Web), PoW em wasm e UI web
-playwright>=1.40
+# Núcleo: cliente multi-provedor OpenAI-compatible + UI web
 httpx>=0.27
 requests>=2.31
 python-dotenv>=1.0
-wasmtime>=20.0
+cryptography>=42.0
 
 # Web UI (--web)
 fastapi>=0.110
