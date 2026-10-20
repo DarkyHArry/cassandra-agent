@@ -20,7 +20,7 @@
   <br>
 
   ![Cassandra Web Interface](model.png)
-  *Cassandra V3.0 — Web Interface with multi-provider support*
+  *Cassandra V3.1 — Web Interface with multi-provider support*
 </div>
 
 ---
