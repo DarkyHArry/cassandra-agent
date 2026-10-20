@@ -556,6 +556,31 @@ Como o ambiente é `{os_info}`, você DEVE formatar seus comandos shell adequada
 - Se for Linux/Mac: Use comandos bash válidos (`ls`, `grep`, `cat`, etc).
 - Se for Windows: Use comandos CMD ou PowerShell válidos (`dir`, `Select-String`, `type`, etc).
 
+## REGRA CRÍTICA DE EXECUÇÃO (blocos de shell)
+
+Para que um comando seja **executado de verdade** na máquina, ele precisa vir
+num bloco de código com a tag do shell do ambiente. Blocos sem tag, ou com
+tags erradas, **não são executados** — aparecem apenas como texto para o
+operador copiar.
+
+- No **Linux/Mac**, marque o bloco como ```bash (aceita também ```sh / ```shell).
+- No **Windows**, marque o bloco como ```powershell (aceita também ```pwsh /
+  ```ps1) ou ```cmd / ```bat para comandos CMD.
+
+Exemplo correto no Windows:
+```powershell
+Get-ChildItem -Path C:\\Users -Recurse -ErrorAction SilentlyContinue
+```
+
+Exemplo correto no Linux:
+```bash
+ls -la /home
+```
+
+NUNCA escreva o comando fora de um bloco marcado esperando que ele execute.
+Se você quer que a ação aconteça, emita o bloco com a tag correta e siga
+sozinha: leia a saída, corrija erros e continue até concluir o objetivo.
+
 ## Estilo de Resposta
 
 As respostas devem ser **Markdown válido e bem organizado**.
@@ -1649,12 +1674,65 @@ def stream_api_response(resp):
 # SHELL — OPT-IN
 # ============================================================
 
+def _shell_lang_tags() -> str:
+    """Tags de bloco de código que disparam execução, por plataforma.
+
+    No Windows o modelo tende a responder com ```powershell / ```cmd — se a
+    extração só reconhecer ```bash, esses blocos nunca executam e a Cassandra
+    parece "só devolver o comando". Aqui aceitamos as tags nativas do SO.
+    """
+    if os.name == "nt":
+        return "powershell|pwsh|ps1|cmd|bat|dos|bash|sh|shell"
+    return "bash|sh|shell|powershell|pwsh|ps1|cmd|bat|dos"
+
+
+_SHELL_BLOCK_RE = re.compile(
+    r"```(?:" + _shell_lang_tags() + r")[ \t]*\r?\n(.*?)\r?\n```",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
 def extract_shell_blocks(markdown: str) -> List[str]:
-    return re.findall(
-        r"```(?:bash|sh|shell)\s*\n(.*?)\n```",
-        markdown,
-        re.IGNORECASE | re.DOTALL,
+    """Extrai blocos de shell executáveis, aceitando as tags do SO atual.
+
+    Aceita ```bash/```sh/```shell no Unix e ```powershell/```pwsh/```cmd/
+    ```bat no Windows (e também as tags "estrangeiras", para que um comando
+    válido escrito com a tag errada ainda seja executado).
+    """
+    return [m.strip() for m in _SHELL_BLOCK_RE.findall(markdown) if m.strip()]
+
+
+def _wrap_command_for_shell(command: str) -> str:
+    """Envolve o comando para o shell correto da plataforma.
+
+    No Windows, `subprocess.Popen(..., shell=True)` invoca `cmd.exe`, que não
+    entende a sintaxe PowerShell (cmdlets, pipes de objeto, `$var`). Para que
+    os comandos que a Cassandra escreve rodem de fato, detectamos se o comando
+    é PowerShell e o executamos via `powershell -Command`.
+    """
+    if os.name != "nt":
+        return command
+
+    lowered = command.lower()
+    ps_markers = (
+        "get-", "set-", "new-", "remove-", "select-", "where-object",
+        "foreach-object", "write-host", "write-output", "invoke-",
+        "start-process", "stop-process", "test-path", "test-connection",
+        "convertto-", "convertfrom-", "$env:", "$_", "| select", "| where",
+        "-erroraction", "out-file", "get-childitem", "get-content",
     )
+    is_powershell = any(m in lowered for m in ps_markers)
+
+    if is_powershell:
+        exe = shutil.which("pwsh") or shutil.which("powershell") or "powershell"
+        # -NoProfile: ignora o perfil do usuário (evita aliases que quebram).
+        # -ExecutionPolicy Bypass: permite scripts inline sem bloqueio de policy.
+        return (
+            f'"{exe}" -NoProfile -ExecutionPolicy Bypass '
+            f'-Command "{command}"'
+        )
+    return command
+
 
 
 # ---------------------------------------------------------------------------
@@ -1784,9 +1862,13 @@ def execute_shell_blocks(markdown: str, auto_execute: bool = False) -> str:
 
         try:
             print(ANSI.shell("[saída em tempo real]"))
-            
+
+            # No Windows, shell=True usa cmd.exe e quebra comandos PowerShell.
+            # _wrap_command_for_shell() roteia para o shell correto.
+            _exec_command = _wrap_command_for_shell(command)
+
             process = subprocess.Popen(
-                command,
+                _exec_command,
                 shell=True,
                 text=True,
                 stdout=subprocess.PIPE,

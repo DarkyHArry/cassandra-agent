@@ -319,6 +319,12 @@ def environment_block(env: Environment) -> str:
     for ex in env.shell_examples():
         lines.append(f"- `{ex}`")
     lines.append("")
+    lines.append(
+        "**IMPORTANTE:** só blocos com a tag acima (ou equivalente do SO) são "
+        "executados. Um comando escrito fora de um bloco marcado NÃO roda — "
+        "ele fica apenas como texto para o operador copiar."
+    )
+    lines.append("")
 
     # --- Ferramentas externas ---
     lines.append("## 🔧 Ferramentas externas (download sob demanda)")
