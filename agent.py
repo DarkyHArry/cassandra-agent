@@ -394,6 +394,11 @@ class ANSI:
 
     @classmethod
     def banner(cls) -> str:
+        try:
+            from cassandra.attribution import attribution_line
+            _attr = attribution_line()
+        except Exception:
+            _attr = "Morlsara Code Nexus — criado e desenvolvido por Mörlsara"
         return (
             f"\n{cls.BRIGHT_RED}{cls.BOLD}"
             "╔══════════════════════════════════════════════╗\n"
@@ -401,6 +406,7 @@ class ANSI:
             "║              SYSTEM INTERFACE                ║\n"
             "╚══════════════════════════════════════════════╝"
             f"{cls.RESET}\n"
+            f"{cls.fmt('  ' + _attr, cls.GRAY)}\n"
         )
 
     @classmethod

@@ -1745,6 +1745,9 @@ HTML_CONTENT = r"""
             await updateStatus();
         })();
     </script>
+    <footer style="text-align:center;padding:10px 0 18px;font-size:11px;opacity:.45;letter-spacing:.5px;">
+        Morlsara Code Nexus — criado e desenvolvido por Mörlsara
+    </footer>
 </body>
 </html>
 """

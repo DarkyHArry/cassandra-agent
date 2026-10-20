@@ -10,6 +10,17 @@ Camadas:
   client     — cliente streaming que integra todas as camadas
 """
 
+from .attribution import (
+    AUTHOR,
+    ORIGIN,
+    REPOSITORY,
+    WATERMARK,
+    attribution_line,
+    attribution_trailer,
+    machine_tag,
+    stamp,
+    verify,
+)
 from .client import (
     AllProvidersExhausted,
     CassandraClient,

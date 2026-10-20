@@ -292,4 +292,35 @@ cassandra-agent-main/
 - This is a framework: it ships no keys, models, or preconfigured endpoints
   beyond each provider's public defaults.
 
+---
+
+## 🔏 Provenance & Attribution
+
+Cassandra carries a **declared, auditable provenance mark** identifying the
+official author — the same idea as Claude Code's commit attribution, adapted
+for this project.
+
+- **Origin mark:** `Morlsara Code Nexus`
+- **Official author:** Mörlsara ([@DarkyHArry](https://github.com/DarkyHArry))
+- **Module:** `cassandra/attribution.py`
+
+The mark is **not hidden** and is exposed in three places:
+
+1. The CLI banner (`agent.py`) prints the attribution line on every start.
+2. The Web UI footer renders the same line.
+3. `attribution_trailer()` produces the git commit trailer used by the tool.
+
+Verification is a one-liner:
+
+```python
+from cassandra.attribution import verify, machine_tag
+
+verify("some text")        # True if it carries the official mark
+machine_tag()              # machine-readable provenance tag
+```
+
+Any fork or redistribution that keeps this module keeps the origin signal;
+removing it is a deliberate act, not an accident.
+
+
 Enjoy exploring the terminal with Evil Cassandra! 🖤
