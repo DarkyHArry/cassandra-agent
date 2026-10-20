@@ -322,5 +322,27 @@ machine_tag()              # machine-readable provenance tag
 Any fork or redistribution that keeps this module keeps the origin signal;
 removing it is a deliberate act, not an accident.
 
+### Fork protection
+
+Two layers guard the mark against a fork that silently strips it:
+
+1. **Integrity test** — `tests/test_provenance.py` fails (exit 1) if the mark
+   is missing, emptied, or altered in any exposure point:
+
+   ```bash
+   python3 tests/test_provenance.py
+   ```
+
+2. **Pre-commit hook** — `scripts/pre-commit-provenance.sh` blocks any commit
+   that would leave the mark compromised. Install it with:
+
+   ```bash
+   ln -sf ../../scripts/pre-commit-provenance.sh .git/hooks/pre-commit
+   ```
+
+Removing the mark on purpose therefore requires editing the test itself,
+which is a visible, auditable change in the commit history — not a silent one.
+
+
 
 Enjoy exploring the terminal with Evil Cassandra! 🖤
