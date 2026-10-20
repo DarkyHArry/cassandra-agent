@@ -1,6 +1,6 @@
 <div align="center">
 
-  # 👁️‍🗨️ Evil Cassandra V3.0
+  # 👁️‍🗨️ Evil Cassandra V3.1b - Final Build
 
   [🇺🇸 English](README.md) | [🇧🇷 Português](README.pt-br.md) | [🇨🇳 中文](README.zh-cn.md)
 
