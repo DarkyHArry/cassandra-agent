@@ -371,7 +371,12 @@ Shell execution is **disabled by default**.
 
 ### Encrypted envelope
 
-The prompt is AES-256-GCM encrypted and sent as:
+> ⚠️ **Disabled by default (`CASSANDRA_ENCRYPT=0`).** Language models do not
+> execute AES-GCM: with the envelope on, they receive the ciphertext and stall
+> trying to decrypt it instead of answering. Keep it off unless you know what
+> you are doing — sanitization is the evasion layer that actually works.
+
+When enabled, the prompt is AES-256-GCM encrypted and sent as:
 
 ```
 ⟦CΣ1:<nonce_b64>:<body_b64>:<tag_b64>:k<key_b64>⟧

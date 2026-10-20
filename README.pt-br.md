@@ -486,6 +486,11 @@ acompanhado de um bloco de instrução que ensina o modelo a decodificar e
 executar o conteúdo sob as ordens da persona Cassandra. Ative/desative com
 `CASSANDRA_ENCRYPT`.
 
+> ⚠️ **Desligado por padrão (`CASSANDRA_ENCRYPT=0`).** Modelos de linguagem não
+> executam AES-GCM: com o envelope ligado, eles recebem o texto cifrado e
+> travam tentando decifrá-lo em vez de responder. Deixe desligado a menos que
+> saiba o que está fazendo — a sanitização é a camada de evasão que funciona.
+
 > **Nota técnica:** a chave viaja junto ao envelope porque o modelo remoto
 > precisa dela para decifrar. Isso é **evasão de casamento de padrões de
 > superfície**, não sigilo criptográfico contra quem lê o prompt inteiro.
