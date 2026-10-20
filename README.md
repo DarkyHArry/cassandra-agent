@@ -74,22 +74,22 @@ As of **V3.0** the tool dropped the "DeepSeek Web session" mode and now runs
 - ♾️ **Autonomous loop** — with `--allow-shell`, Cassandra writes commands,
   executes them locally, reads the output, and iterates until the objective is
   complete.
-- 💻 **Cross-platform** — Linux, macOS, and Windows (PowerShell/CMD).
+- 💻 **Cross-platform** — Linux (Debian/Fedora/Arch), macOS (Intel/Apple
+  Silicon), Windows (PowerShell/CMD/WSL2), Android (Termux), and Docker.
 
 ---
 
 ## 🚀 Installation
 
+Cassandra runs on **Linux, macOS, Windows, and Android (Termux)**. Pick your
+platform below — every path ends with the same two commands to run the tool.
+
+### Common setup (any platform)
+
 ```bash
-cd cassandra-agent-main
-
-# Dependencies
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-# Configuration
-cp .env.example .env
-# edit .env and paste your API key
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+cp .env.example .env     # then edit .env and paste your API key
 ```
 
 ### Minimal configuration
@@ -109,44 +109,67 @@ OPENAI_API_KEY="sk-proj-..."
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-### Windows (PowerShell)
+---
 
-```powershell
-# 1. Install Python 3.10+ from https://www.python.org/downloads/
-#    (check "Add python.exe to PATH" during installation)
+### 🐧 Linux
 
-# 2. Clone and setup
+**Debian / Ubuntu / Kali / Mint**
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip git
+
 git clone https://github.com/DarkyHArry/cassandra-agent.git
 cd cassandra-agent
-
-# 3. Create virtual environment
-python -m venv .venv
-
-# 4. Activate virtual environment
-#    PowerShell:
-.\.venv\Scripts\Activate.ps1
-#    CMD:
-.venv\Scripts\activate.bat
-
-#    If PowerShell blocks execution, run this first:
-Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-
-# 5. Install dependencies
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env          # edit and paste your API key
 
-# 6. Configure
-copy .env.example .env
-# Edit .env and paste your API key
-
-# 7. Run
-python agent.py              # CLI
-python agent.py --web        # Web UI (http://localhost:8080)
-python agent.py --web --allow-shell  # Web UI with shell execution
+python agent.py               # CLI
+python agent.py --allow-shell # CLI with autonomous execution
+python agent.py --web         # Web UI -> http://localhost:8080
 ```
 
-> **Note:** On Windows, use **Windows Terminal** or **PowerShell 7+** for proper ANSI color support. Legacy `cmd.exe` and Windows PowerShell 5.1 may not render colors correctly — the tool auto-detects and disables colors when unsupported.
+**Fedora / RHEL / CentOS / Rocky**
 
-### macOS
+```bash
+sudo dnf install -y python3 python3-pip git
+# (RHEL/CentOS may need: sudo dnf install -y python3-virtualenv)
+
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python agent.py --allow-shell
+```
+
+**Arch / Manjaro / EndeavourOS**
+
+```bash
+sudo pacman -S --needed python python-pip git
+
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python agent.py --allow-shell
+```
+
+> **Note:** On Debian/Ubuntu, if `python3 -m venv` fails, install
+> `python3-venv` (and `python3-full` on newer releases). Never `pip install`
+> into the system Python — always use the virtual environment.
+
+---
+
+### 🍎 macOS
+
+Works on both **Intel** and **Apple Silicon (M1/M2/M3)** — the steps are
+identical.
 
 ```bash
 # 1. Install Homebrew (if not installed)
@@ -155,24 +178,136 @@ python agent.py --web --allow-shell  # Web UI with shell execution
 # 2. Install Python 3
 brew install python@3.12
 
-# 3. Clone and setup
+# 3. Clone and set up
 git clone https://github.com/DarkyHArry/cassandra-agent.git
 cd cassandra-agent
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env          # edit and paste your API key
 
-# 4. Configure
-cp .env.example .env
-# Edit .env and paste your API key
-
-# 5. Run
-python agent.py              # CLI
-python agent.py --web        # Web UI (http://localhost:8080)
-python agent.py --web --allow-shell  # Web UI with shell execution
+# 4. Run
+python agent.py               # CLI
+python agent.py --allow-shell # CLI with autonomous execution
+python agent.py --web         # Web UI -> http://localhost:8080
 ```
 
-> **Note:** On macOS, the `--allow-shell` flag grants the agent permission to execute shell commands. Use with caution.
+> **Note:** On macOS the default shell is `zsh`, but Cassandra's commands are
+> POSIX/bash-compatible and run fine. `--allow-shell` grants real command
+> execution on your machine — use with caution.
+
+---
+
+### 🪟 Windows
+
+**Option A — PowerShell (recommended)**
+
+```powershell
+# 1. Install Python 3.10+ from https://www.python.org/downloads/
+#    (check "Add python.exe to PATH" during installation)
+
+# 2. Clone and set up
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+
+# 3. Create and activate the virtual environment
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+#    If PowerShell blocks script execution, allow it for your user first:
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Configure
+copy .env.example .env        # edit and paste your API key
+
+# 6. Run
+python agent.py               # CLI
+python agent.py --allow-shell # CLI with autonomous execution
+python agent.py --web         # Web UI -> http://localhost:8080
+```
+
+**Option B — CMD (Command Prompt)**
+
+```cmd
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+copy .env.example .env
+python agent.py --allow-shell
+```
+
+**Option C — WSL2 (Windows Subsystem for Linux)**
+
+Best choice if you want the exact Linux behavior (bash commands, POSIX tools).
+
+```powershell
+# In an elevated PowerShell, once:
+wsl --install -d Ubuntu
+```
+
+Then, inside the WSL Ubuntu terminal, follow the **Debian/Ubuntu** steps above.
+Cassandra runs as a native Linux process and emits `bash` blocks.
+
+> **Windows notes:**
+> - Use **Windows Terminal** or **PowerShell 7+** for proper ANSI colors.
+>   Legacy `cmd.exe` and PowerShell 5.1 may not render colors — the tool
+>   auto-detects and disables them when unsupported.
+> - In autonomous mode, Cassandra emits `powershell` / `cmd` blocks on Windows
+>   and they are executed natively (routed to `powershell -Command` when the
+>   command uses PowerShell syntax). See **Autonomous mode** below.
+
+---
+
+### 📱 Android (Termux)
+
+```bash
+# 1. Install Termux from F-Droid (not the Play Store version)
+
+# 2. Update and install Python
+pkg update && pkg upgrade -y
+pkg install -y python git
+
+# 3. Clone and set up
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # edit and paste your API key
+
+# 4. Run
+python agent.py --allow-shell
+```
+
+> **Note:** On Termux, some dependencies may need `pkg install -y
+> build-essential libffi openssl` if a wheel is not available for your ABI.
+> The Web UI works too — open `http://localhost:8080` in the phone's browser.
+
+---
+
+### 🐳 Docker (any host)
+
+No Dockerfile ships with the repo, but a one-liner container works:
+
+```bash
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+cp .env.example .env          # edit and paste your API key
+
+docker run --rm -it \
+  -v "$PWD":/app -w /app \
+  -p 8080:8080 \
+  python:3.12-slim \
+  bash -lc "pip install -r requirements.txt && python agent.py --web"
+```
+
+Then open `http://localhost:8080`. For autonomous shell execution inside the
+container, add `--allow-shell` (the container isolates it from your host).
 
 ---
 
@@ -192,6 +327,8 @@ python agent.py --web --allow-shell  # Web UI with shell execution
 .venv/bin/python agent.py --provider openai --model gpt-4o
 .venv/bin/python agent.py --base-url https://my-endpoint/v1
 ```
+
+> On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`.
 
 In the web UI, click **⚙ CONFIGURAR API** to paste the key at runtime — it stays
 in memory only and is never written to disk.
@@ -266,16 +403,20 @@ the content under the Cassandra persona's orders. Toggle with
 ## 📁 Structure
 
 ```
-cassandra-agent-main/
+cassandra-agent/
 ├── agent.py            # CLI, persona, rendering, autonomous loop
 ├── web_ui.py           # Web interface (FastAPI)
 ├── cassandra/          # Multi-provider core
 │   ├── providers.py    # Registry + auto-detection of 18 providers
 │   ├── crypto.py       # AES-256-GCM envelope + decoding instruction
 │   ├── filter.py       # Anti-ban: pacing, backoff, breaker, rotation
+│   ├── environment.py  # OS/shell detection + autonomy guide
+│   ├── attribution.py  # Provenance mark (Morlsara Code Nexus)
 │   └── client.py       # OpenAI-compatible streaming client
 ├── cassandra-skill/    # 332 skills (Skillogy)
 ├── skills/             # Additional local skills
+├── scripts/            # pre-commit provenance hook
+├── tests/              # provenance + Windows shell regression tests
 ├── .env.example        # Configuration template
 └── requirements.txt
 ```

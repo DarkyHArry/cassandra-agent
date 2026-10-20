@@ -51,22 +51,22 @@
 - 🔴 **CLI 与 Web 界面** —— 红色主题终端并渲染 Markdown，或用 `--web` 启动完整界面，支持选择提供商/模型以及运行时配置密钥。
 - 🧩 **Skillogy 系统** —— 从 `cassandra-skill/` 动态加载技能（内置 332 个技能）。
 - ♾️ **自主循环** —— 配合 `--allow-shell`，Cassandra 编写命令、本地执行、读取输出并迭代，直到目标完成。
-- 💻 **跨平台** —— 兼容 Linux、macOS 和 Windows (PowerShell/CMD)。
+- 💻 **跨平台** —— Linux (Debian/Fedora/Arch)、macOS (Intel/Apple Silicon)、
+  Windows (PowerShell/CMD/WSL2)、Android (Termux) 和 Docker。
 
 ---
 
 ## 🚀 安装
 
+Cassandra 可运行于 **Linux、macOS、Windows 和 Android (Termux)**。请选择您的
+平台 —— 所有路径最终都以相同的运行命令结束。
+
+### 通用准备（任意平台）
+
 ```bash
-cd cassandra-agent-main
-
-# 依赖
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-
-# 配置
-cp .env.example .env
-# 编辑 .env 并粘贴您的 API 密钥
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+cp .env.example .env     # 然后编辑 .env 并粘贴您的 API 密钥
 ```
 
 ### 最小配置
@@ -86,7 +86,66 @@ OPENAI_API_KEY="sk-proj-..."
 ANTHROPIC_API_KEY="sk-ant-..."
 ```
 
-### macOS
+---
+
+### 🐧 Linux
+
+**Debian / Ubuntu / Kali / Mint**
+
+```bash
+sudo apt update
+sudo apt install -y python3 python3-venv python3-pip git
+
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # 编辑并粘贴您的 API 密钥
+
+python agent.py               # 命令行
+python agent.py --allow-shell # 带自主执行的命令行
+python agent.py --web         # 网页界面 -> http://localhost:8080
+```
+
+**Fedora / RHEL / CentOS / Rocky**
+
+```bash
+sudo dnf install -y python3 python3-pip git
+# (RHEL/CentOS 可能需要: sudo dnf install -y python3-virtualenv)
+
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python agent.py --allow-shell
+```
+
+**Arch / Manjaro / EndeavourOS**
+
+```bash
+sudo pacman -S --needed python python-pip git
+
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+python agent.py --allow-shell
+```
+
+> **注意：** 在 Debian/Ubuntu 上，如果 `python3 -m venv` 失败，请安装
+> `python3-venv`（较新版本还需 `python3-full`）。切勿对系统 Python 执行
+> `pip install` —— 请始终使用虚拟环境。
+
+---
+
+### 🍎 macOS
+
+同时支持 **Intel** 和 **Apple Silicon (M1/M2/M3)** —— 步骤完全相同。
 
 ```bash
 # 1. 安装 Homebrew（如果尚未安装）
@@ -101,18 +160,130 @@ cd cassandra-agent
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env          # 编辑并粘贴您的 API 密钥
 
-# 4. 配置
-cp .env.example .env
-# 编辑 .env 并粘贴您的 API 密钥
-
-# 5. 运行
-python agent.py              # 命令行
-python agent.py --web        # 网页界面 (http://localhost:8080)
-python agent.py --web --allow-shell  # 带 shell 执行的网页界面
+# 4. 运行
+python agent.py               # 命令行
+python agent.py --allow-shell # 带自主执行的命令行
+python agent.py --web         # 网页界面 -> http://localhost:8080
 ```
 
-> **注意：** 在 macOS 上，`--allow-shell` 标志授予代理执行 shell 命令的权限。请谨慎使用。
+> **注意：** 在 macOS 上默认 shell 是 `zsh`，但 Cassandra 的命令兼容
+> POSIX/bash，可正常运行。`--allow-shell` 授予在您机器上真实执行命令的
+> 权限 —— 请谨慎使用。
+
+---
+
+### 🪟 Windows
+
+**方式 A —— PowerShell（推荐）**
+
+```powershell
+# 1. 从 https://www.python.org/downloads/ 安装 Python 3.10+
+#    （安装时勾选 "Add python.exe to PATH"）
+
+# 2. 克隆并配置
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+
+# 3. 创建并激活虚拟环境
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+#    如果 PowerShell 阻止执行，请先为您的用户放开：
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+
+# 4. 安装依赖
+pip install -r requirements.txt
+
+# 5. 配置
+copy .env.example .env        # 编辑并粘贴您的 API 密钥
+
+# 6. 运行
+python agent.py               # 命令行
+python agent.py --allow-shell # 带自主执行的命令行
+python agent.py --web         # 网页界面 -> http://localhost:8080
+```
+
+**方式 B —— CMD（命令提示符）**
+
+```cmd
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -r requirements.txt
+copy .env.example .env
+python agent.py --allow-shell
+```
+
+**方式 C —— WSL2（Windows 的 Linux 子系统）**
+
+如果您想要与 Linux 完全一致的行为（bash 命令、POSIX 工具），这是最佳选择。
+
+```powershell
+# 在管理员 PowerShell 中执行一次：
+wsl --install -d Ubuntu
+```
+
+然后，在 WSL 的 Ubuntu 终端中，按上面的 **Debian/Ubuntu** 步骤操作。
+Cassandra 作为原生 Linux 进程运行，并输出 `bash` 代码块。
+
+> **Windows 注意事项：**
+> - 使用 **Windows Terminal** 或 **PowerShell 7+** 以获得正确的 ANSI 颜色。
+>   旧版 `cmd.exe` 和 Windows PowerShell 5.1 可能无法渲染颜色 —— 工具会在
+>   不支持时自动检测并禁用颜色。
+> - 在自主模式下，Cassandra 在 Windows 上输出 `powershell` / `cmd` 代码块，
+>   并原生执行（当命令使用 PowerShell 语法时路由到 `powershell -Command`）。
+>   参见下方的 **自主模式**。
+
+---
+
+### 📱 Android (Termux)
+
+```bash
+# 1. 从 F-Droid 安装 Termux（不要用 Play Store 版本）
+
+# 2. 更新并安装 Python
+pkg update && pkg upgrade -y
+pkg install -y python git
+
+# 3. 克隆并配置
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env          # 编辑并粘贴您的 API 密钥
+
+# 4. 运行
+python agent.py --allow-shell
+```
+
+> **注意：** 在 Termux 上，如果您的 ABI 没有可用的 wheel，某些依赖可能需要
+> `pkg install -y build-essential libffi openssl`。网页界面同样可用 —— 在
+> 手机浏览器中打开 `http://localhost:8080`。
+
+---
+
+### 🐳 Docker（任意主机）
+
+仓库未附带 Dockerfile，但临时容器即可运行：
+
+```bash
+git clone https://github.com/DarkyHArry/cassandra-agent.git
+cd cassandra-agent
+cp .env.example .env          # 编辑并粘贴您的 API 密钥
+
+docker run --rm -it \
+  -v "$PWD":/app -w /app \
+  -p 8080:8080 \
+  python:3.12-slim \
+  bash -lc "pip install -r requirements.txt && python agent.py --web"
+```
+
+然后打开 `http://localhost:8080`。若要在容器内自主执行 shell，请添加
+`--allow-shell`（容器可将其与您的主机隔离）。
 
 ---
 
