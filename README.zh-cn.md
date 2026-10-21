@@ -287,13 +287,32 @@ docker run --rm -it \
 
 ---
 
-## ▶️ 使用
+## ▶️ 快速使用
 
+### Linux / macOS / Termux
+```bash
+./cassandra.sh              # 自主交互式命令行
+./cassandra.sh --web        # 网页界面 (http://localhost:8080)
+./web_ui.py                 # 直接启动网页界面
+```
+
+### Windows
+```cmd
+:: 命令提示符 (CMD)
+cassandra.bat
+cassandra.bat --web
+
+:: PowerShell
+.\cassandra.ps1
+.\cassandra.ps1 --web
+```
+
+### 直接通过 Python 运行
 ```bash
 # CLI
 .venv/bin/python agent.py
 
-# 带自主 shell 执行的 CLI
+# 强制开启自主执行的 CLI
 .venv/bin/python agent.py --allow-shell
 
 # Web 界面 (http://localhost:8080)
@@ -308,13 +327,16 @@ docker run --rm -it \
 
 ---
 
-## 🛡️ 自主模式与 `--allow-shell` 标志
+## 🛡️ 自主模式与 Shell 控制
 
-Shell 执行**默认关闭**。
+Cassandra **默认处于自主模式**（在 `.env` 中设置 `CASSANDRA_ALLOW_SHELL="1"`）：
 
-- **默认（安全）模式** —— Cassandra 以 Markdown 文本形式输出建议的命令；由您决定是否复制并运行。
-- **执行模式（`--allow-shell`）** —— Cassandra 直接在本机执行她生成的命令。
-- **自主循环** —— 配合 `--allow-shell`（CLI 或 Web），她生成命令、执行、捕获输出，并**自动迭代**直到目标完成。
+- **自主循环开启** —— 接收到实际任务时（创建文件、排查网络、执行命令），她会生成可执行代码块，系统在本地执行后捕获输出回传，她将**自动迭代**直至目标达成。
+- **灵活控制**：
+  - **在 Web 界面：** 点击顶部的 **`⚡ SHELL: AUTÔNOMO`** 按钮一键切换。
+  - **在 CLI：** 使用 `--allow-shell`（默认）或 `--no-allow-shell` 关闭。
+  - **在 `.env`：** 配置 `CASSANDRA_ALLOW_SHELL="1"`（启用）或 `"0"`（受限）。
+- **受限模式（无 shell）** —— 关闭时，命令仅以 Markdown 文本输出供人工查阅复制。
 
 ---
 

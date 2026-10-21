@@ -132,8 +132,13 @@ def _detect_shell() -> Tuple[str, str]:
         if ps:
             return ps, "powershell"
         return os.getenv("COMSPEC", "cmd.exe"), "cmd"
-    sh = os.getenv("SHELL") or shutil.which("bash") or "/bin/sh"
-    kind = "bash" if "bash" in sh else "sh"
+    sh = os.getenv("SHELL") or shutil.which("bash") or shutil.which("zsh") or shutil.which("sh") or "/bin/sh"
+    if "bash" in sh:
+        kind = "bash"
+    elif "zsh" in sh:
+        kind = "zsh"
+    else:
+        kind = "sh"
     return sh, kind
 
 
@@ -170,8 +175,11 @@ def snapshot(
     soul_ok, soul_path = _find_soul()
     dirs = skills_dirs()
 
+    is_termux = bool(os.getenv("TERMUX_VERSION") or "/data/data/com.termux" in os.getenv("PREFIX", ""))
+    detected_os = f"Android (Termux {os.getenv('TERMUX_VERSION', '')})".strip() if is_termux else platform.system()
+
     env = Environment(
-        os_name=platform.system(),
+        os_name=detected_os,
         os_release=platform.release(),
         os_version=platform.version(),
         arch=platform.machine(),
@@ -251,6 +259,12 @@ def environment_block(env: Environment) -> str:
         lines.append(f"- **Modelo ativo:** `{env.model}`")
     if env.provider:
         lines.append(f"- **Provedor:** {env.provider}")
+    if "termux" in env.os_name.lower():
+        lines.append("- **Ambiente Termux (Android):** use `pkg install <pacote>` (sem `sudo`).")
+    elif env.os_name == "Darwin":
+        lines.append("- **Ambiente macOS (Darwin):** shell padrão zsh/bash. Use `brew` se Homebrew estiver instalado.")
+    elif env.os_name == "Windows":
+        lines.append("- **Ambiente Windows:** use PowerShell (```powershell) ou CMD (```cmd).")
     lines.append("")
 
     # --- Autonomia ---

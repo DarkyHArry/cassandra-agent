@@ -63,18 +63,22 @@ PROVIDERS: List[Provider] = [
         label="NVIDIA NIM",
         base_url="https://integrate.api.nvidia.com/v1",
         env_var="NVIDIA_API_KEY",
-        default_model="nvidia/nemotron-3-super-120b-a12b",
+        default_model="nvidia/nemotron-3-ultra-550b-a55b",
         models=[
-            "nvidia/nemotron-3-super-120b-a12b",
-            "nvidia/nemotron-3-ultra-550b-a55b",
-            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-            "nvidia/nemotron-3.5-lightning-30b-a3b",
-            "nvidia/llama-3.1-nemotron-70b-instruct",
+            # Verificados em 2026-10-20 contra a conta nvapi- operacional.
+            # Ordem: maior janela de contexto primeiro.
+            "nvidia/nemotron-3-ultra-550b-a55b",              # 1.048.576 tok
+            "nvidia/nemotron-3.5-super-vl-120b-a12b",        # 1.000.000 tok
+            "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning", # 1.000.000 tok
+            "stepfun-ai/step-5-preview",                     # 1.000.000 tok
             "meta/llama-3.2-11b-vision-instruct",
-            "meta/llama-3.2-90b-vision-instruct",
-            "deepseek-ai/deepseek-v4.1-flash",
-            "stepfun-ai/step-5-preview",
-            "stepfun-ai/step-3.7-flash",
+            "poolside/laguna-xs-2.1",
+            "openai/gpt-oss-20b",
+            # Guardas de segurança (resposta em JSON, não texto livre).
+            "nvidia/nemotron-3.5-content-safety",
+            "nvidia/llama-3.1-nemotron-safety-guard-8b-v3",
+            "nvidia/ising-calibration-1.5-31b",
+            "nvidia/riva-translate-4b-instruct-v2",
         ],
         key_patterns=[r"^nvapi-"],
         notes="Chaves começam com 'nvapi-'. A disponibilidade dos modelos "
@@ -295,16 +299,24 @@ PROVIDER_MAP: Dict[str, Provider] = {p.key: p for p in PROVIDERS}
 # Overrides por modelo. Quando um modelo não está aqui, usa o
 # context_window do provedor. Valores reais dos fabricantes.
 MODEL_CONTEXT_WINDOWS: Dict[str, int] = {
-    # NVIDIA NIM
+    # NVIDIA NIM — valores medidos em 2026-10-20 via erro HTTP 400 do
+    # endpoint ("This model's maximum context length is N tokens").
+    "nvidia/nemotron-3-ultra-550b-a55b": 1_048_576,
+    "nvidia/nemotron-3.5-super-vl-120b-a12b": 1_000_000,
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": 1_000_000,
+    "stepfun-ai/step-5-preview": 1_000_000,
+    "meta/llama-3.2-11b-vision-instruct": 131_072,
+    "poolside/laguna-xs-2.1": 262_144,
+    "openai/gpt-oss-20b": 131_072,
+    "nvidia/nemotron-3.5-content-safety": 128_000,
+    "nvidia/llama-3.1-nemotron-safety-guard-8b-v3": 128_000,
+    "nvidia/ising-calibration-1.5-31b": 128_000,
+    "nvidia/riva-translate-4b-instruct-v2": 128_000,
     "nvidia/nemotron-3-super-120b-a12b": 128_000,
-    "nvidia/nemotron-3-ultra-550b-a55b": 128_000,
-    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": 128_000,
     "nvidia/nemotron-3.5-lightning-30b-a3b": 128_000,
     "nvidia/llama-3.1-nemotron-70b-instruct": 128_000,
-    "meta/llama-3.2-11b-vision-instruct": 128_000,
     "meta/llama-3.2-90b-vision-instruct": 128_000,
     "deepseek-ai/deepseek-v4.1-flash": 128_000,
-    "stepfun-ai/step-5-preview": 1_000_000,
     "stepfun-ai/step-3.7-flash": 128_000,
     # DeepSeek
     "deepseek-chat": 128_000,

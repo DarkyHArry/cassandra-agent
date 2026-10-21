@@ -68,7 +68,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-ALLOW_SHELL = False
+ALLOW_SHELL = os.getenv("CASSANDRA_ALLOW_SHELL", "1").lower() in ("1", "true", "yes", "on")
 
 # Valor de CASSANDRA_PROVIDER vindo do .env, guardado antes de qualquer
 # override da interface. Sem isto, escolher um provedor no seletor e depois
@@ -672,7 +672,7 @@ HTML_CONTENT = r"""
         </div>
         <div class="controls">
             <div class="controls-top">
-                <span id="shellWarning" class="warning-banner">⚠ SHELL AUTOMÁTICO ATIVO</span>
+                <button class="cyber-btn" id="shellToggleBtn" title="Clique para alternar o modo de execução autônoma de shell">⚡ SHELL: AUTÔNOMO</button>
                 <span id="providerStatus" class="status-pill">verificando...</span>
                 <span id="cryptoStatus" class="status-pill">—</span>
                 <button class="cyber-btn" id="configBtn">⚙ CONFIGURAR API</button>
@@ -788,7 +788,19 @@ HTML_CONTENT = r"""
                 pedidoAtual.abort();
             } catch (e) { /* já abortado */ }
         }
-        const shellWarning = document.getElementById('shellWarning');
+        const shellToggleBtn = document.getElementById('shellToggleBtn');
+        if (shellToggleBtn) {
+            shellToggleBtn.addEventListener('click', async () => {
+                try {
+                    const r = await fetch('/api/shell/toggle', { method: 'POST' });
+                    const d = await r.json();
+                    await updateStatus();
+                    showToast(d.allow_shell ? '⚡ Shell Autônomo ATIVADO!' : '⚠️ Shell em Modo Restrito.', 3000);
+                } catch (e) {
+                    showToast('Erro ao alternar shell: ' + e, 3000);
+                }
+            });
+        }
         const promptPrefix = document.getElementById('promptPrefix');
         const providerStatus = document.getElementById('providerStatus');
         const cryptoStatus = document.getElementById('cryptoStatus');
@@ -1008,12 +1020,18 @@ HTML_CONTENT = r"""
                 const r = await fetch('/api/status?t=' + Date.now(), { cache: 'no-store' });
                 const data = await r.json();
 
-                if (data.allow_shell) {
-                    shellWarning.style.display = 'block';
-                    promptPrefix.textContent = 'root@cassandra:~#';
-                } else {
-                    shellWarning.style.display = 'none';
-                    promptPrefix.textContent = 'user@cassandra:~$';
+                if (shellToggleBtn) {
+                    if (data.allow_shell) {
+                        shellToggleBtn.textContent = '⚡ SHELL: AUTÔNOMO';
+                        shellToggleBtn.style.borderColor = 'var(--ok-green)';
+                        shellToggleBtn.style.color = 'var(--ok-green)';
+                        promptPrefix.textContent = 'root@cassandra:~#';
+                    } else {
+                        shellToggleBtn.textContent = '⚡ SHELL: RESTRITO';
+                        shellToggleBtn.style.borderColor = 'var(--accent-dark-red)';
+                        shellToggleBtn.style.color = '#888';
+                        promptPrefix.textContent = 'user@cassandra:~$';
+                    }
                 }
 
                 if (data.credentials > 0) {
@@ -1890,6 +1908,32 @@ async def get_status():
     }
 
 
+@app.post("/api/shell/toggle")
+async def toggle_shell_endpoint():
+    """
+    Alterna o modo de execução autônoma de comandos shell em tempo de execução.
+    """
+    global ALLOW_SHELL
+    ALLOW_SHELL = not ALLOW_SHELL
+    user = getpass.getuser()
+    privilege = "ROOT" if ALLOW_SHELL else "USER"
+    if conversation and conversation[0].get("role") == "system":
+        dynamic_skillogy, _ = agent.get_relevant_skillogy(
+            "",
+            allow_shell=ALLOW_SHELL,
+        )
+        conversation[0] = {
+            "role": "system",
+            "content": build_system_prompt(
+                user=user,
+                privilege=privilege,
+                skillogy=dynamic_skillogy,
+                allow_shell=ALLOW_SHELL,
+            ),
+        }
+    return {"allow_shell": ALLOW_SHELL}
+
+
 @app.post("/api/credentials")
 async def set_credentials(req: CredentialRequest):
     """
@@ -1978,14 +2022,16 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     user = getpass.getuser()
     privilege = "ROOT" if ALLOW_SHELL else "USER"
 
+    current_system_prompt = build_system_prompt(
+        user=user,
+        privilege=privilege,
+        skillogy=dynamic_skillogy,
+        allow_shell=ALLOW_SHELL,
+    )
     if not conversation or conversation[0].get("role") != "system":
-        current_system_prompt = build_system_prompt(
-            user=user,
-            privilege=privilege,
-            skillogy=dynamic_skillogy,
-            allow_shell=ALLOW_SHELL,
-        )
-        conversation.append({"role": "system", "content": current_system_prompt})
+        conversation.insert(0, {"role": "system", "content": current_system_prompt})
+    else:
+        conversation[0] = {"role": "system", "content": current_system_prompt}
 
     conversation.append({"role": "user", "content": prompt})
 
@@ -2361,9 +2407,10 @@ async def chat_endpoint(req: ChatRequest, request: Request):
     )
 
 
-def run_server(port=8080, allow_shell=False):
+def run_server(port=8080, allow_shell=None):
     global ALLOW_SHELL
-    ALLOW_SHELL = allow_shell
+    if allow_shell is not None:
+        ALLOW_SHELL = allow_shell
 
     if not CORE_OK:
         print(f"\n[!] ERRO: núcleo multi-provedor indisponível — {_CORE_ERR}")
@@ -2401,3 +2448,31 @@ def run_server(port=8080, allow_shell=False):
         # terminar. 3s é suficiente para o stream fechar com elegância.
         timeout_graceful_shutdown=3,
     )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Cassandra Web UI")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("CASSANDRA_WEB_PORT", "8080")),
+        help="Porta do servidor Web (padrão: 8080)",
+    )
+    parser.add_argument(
+        "--allow-shell",
+        dest="allow_shell",
+        action="store_true",
+        default=ALLOW_SHELL,
+        help="Permite execução autônoma de comandos shell na web (padrão: ativo)",
+    )
+    parser.add_argument(
+        "--no-allow-shell",
+        dest="allow_shell",
+        action="store_false",
+        help="Desativa a execução autônoma de comandos shell na web",
+    )
+    args = parser.parse_args()
+    run_server(port=args.port, allow_shell=args.allow_shell)
+

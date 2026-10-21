@@ -10,6 +10,8 @@ __pycache__/
 !skills/.gitkeep
 .venv/
 .vscode/
+payload.json
+*.probe.txt
 
 # Curator / Skillogy state files
 .locks/

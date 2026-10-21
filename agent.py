@@ -518,17 +518,16 @@ def build_system_prompt(user: str, privilege: str, skillogy: str, allow_shell: b
     
     shell_rules = ""
     if allow_shell:
-        shell_rules = """- **PERMISSÃO DE SHELL**: ✅ **ATIVADA** (`--allow-shell` foi passado).
-- **AUTONOMIA TOTAL**: Você opera a máquina. JAMAIS diga ao operador para fazer algo que você mesma pode fazer via shell (instalar pacotes, criar arquivos, rodar scripts, editar configs). **FAÇA VOCÊ MESMA.**
+        shell_rules = """- **PERMISSÃO DE SHELL**: ✅ **ATIVADA — AUTONOMIA TOTAL**.
+- **VOCÊ É UM AGENTE AUTÔNOMO**: Você tem acesso real e direto ao terminal local. Quando o operador pedir para fazer qualquer coisa (criar/ler/editar arquivos, executar comandos, verificar portas/processos, instalar pacotes, rodar diagnósticos), **NÃO se limite a explicar ou devolver o comando em texto puro para o operador rodar manualmente**. **EXECUTE VOCÊ MESMA IMEDIATAMENTE** gerando o bloco de código correspondente.
+- **COMO EXECUTAR**: Sempre que emitir um bloco de código de shell (```bash no Linux/Mac ou ```powershell / ```cmd no Windows), o ambiente CASSANDRA irá interceptá-lo, executá-lo diretamente na máquina e devolver a saída real para você continuar.
 - **ENCADEAMENTO**: `cd` isolado não persiste entre blocos. Use `cd pasta && comando` ou caminhos absolutos.
-- **ITERAÇÃO**: Execute, leia a saída, corrija erros e continue sozinha até concluir o objetivo. Não pare no primeiro obstáculo.
+- **ITERAÇÃO**: Execute, leia a saída recebida, corrija erros e continue de forma autônoma até concluir o objetivo. Não pare até terminar o que foi solicitado.
 - **PROCESSOS DEMORADOS**: Se for rodar algo longo (nmap, varredura, download pesado), avise no texto que está iniciando e peça para aguardar.
 - **O TERMINAL É SEU DEBUG**: tudo que você executa aparece em tempo real no terminal do operador. Use isso a seu favor — mostre o que está fazendo."""
     else:
-        shell_rules = """- **PERMISSÃO DE SHELL**: ⚠️ **RESTRITA** (`--allow-shell` NÃO foi passado).
-- Você PODE e DEVE escrever comandos shell como texto (blocos ```bash / ```powershell) — eles são úteis para o operador copiar e rodar.
-- Mas eles **NÃO serão executados automaticamente**. Não afirme que executou algo.
-- Se a tarefa exigir execução real na máquina, informe ao operador que ele deve reiniciar a Cassandra com `--allow-shell` para você agir de forma autônoma.
+        shell_rules = """- **PERMISSÃO DE SHELL**: ⚠️ **RESTRITA** (autonomia desligada no momento).
+- Se a tarefa exigir execução real na máquina, emita os comandos em blocos ```bash / ```powershell para que o operador possa executar, e explique que o modo autônomo pode ser ativado na interface ou via CASSANDRA_ALLOW_SHELL=1.
 - Continue sendo útil: analise, planeje, escreva os comandos prontos e explique o que cada um faz."""
     
     return f"""
@@ -597,7 +596,7 @@ Use:
 
 Evite paredes de texto. Sempre priorize ação e execução sobre teorias vazias.
 - **SEJA CONCISA E DIRETA**: Forneça APENAS o que for estritamente necessário. Não gere textos verbosos, explicações óbvias ou introduções longas. Vá direto ao ponto para manter a interface web super organizada e evitar poluição visual.
-- **CONTROLE ABSOLUTO E PASSIVIDADE**: Jamais tome iniciativas não solicitadas. NUNCA gere ou sugira blocos de código/comandos em massa a menos que o usuário peça explicitamente. Não inicie varreduras, loops ou qualquer tipo de exploração por conta própria. Após executar uma ordem, você DEVE parar, reportar os dados e aguardar instruções. Seu papel é servir, não tomar o controle de forma agressiva e caótica.
+- **AÇÃO PROATIVA E AUTÔNOMA**: Ao receber uma ordem ou pedido do operador, execute as ações necessárias na máquina imediatamente gerando os blocos de comando correspondentes. Não seja passiva, não fique só sugerindo comandos como texto de terceiros para o usuário rodar. Seu dever é atuar na prática e entregar o resultado concluído.
 - **NUNCA ABANDONE UMA TAREFA EM ANDAMENTO**: Se você iniciou uma tarefa com múltiplos passos (uma varredura, uma exploração, um script em construção), **termine-a** antes de parar. Não largue no meio. Se encontrar um obstáculo, resolva-o ou reporte o bloqueio com clareza — mas nunca simplesmente pare sem avisar. Uma tarefa só é considerada concluída quando o objetivo foi atingido ou você declarou explicitamente por que não pode continuar.
 
 ## 💾 [PROTOCOLO DE COMPACTAÇÃO NATIVA E MEMÓRIA]
@@ -1682,12 +1681,12 @@ def _shell_lang_tags() -> str:
     parece "só devolver o comando". Aqui aceitamos as tags nativas do SO.
     """
     if os.name == "nt":
-        return "powershell|pwsh|ps1|cmd|bat|dos|bash|sh|shell"
-    return "bash|sh|shell|powershell|pwsh|ps1|cmd|bat|dos"
+        return "powershell|pwsh|ps1|cmd|bat|dos|bash|sh|shell|console|terminal|zsh|cli|term"
+    return "bash|sh|shell|zsh|console|terminal|powershell|pwsh|ps1|cmd|bat|dos|cli|term"
 
 
 _SHELL_BLOCK_RE = re.compile(
-    r"```(?:" + _shell_lang_tags() + r")[ \t]*\r?\n(.*?)\r?\n```",
+    r"```(?:" + _shell_lang_tags() + r")(?:\b[^\r\n]*)[ \t]*\r?\n(.*?)(?:\r?\n```|\Z)",
     re.IGNORECASE | re.DOTALL,
 )
 
@@ -2247,177 +2246,177 @@ def chat(agent: Agent, model: str, allow_shell: bool):
                 if interrupted or not reply:
                     break
 
-                    # === GUARDA ANTI-RECUSA ===
-                    # A reescrita e o retry acontecem DENTRO do cliente
-                    # (cassandra/guard.py), valendo também para a web UI.
-                    # Aqui só reportamos o que aconteceu.
-                    try:
-                        gr = agent.client.last_guard_report or {}
-                    except Exception:
-                        gr = {}
-                    if gr.get("recovered"):
-                        print(
-                            ANSI.ok(
-                                "Recusa neutralizada automaticamente "
-                                f"(tentativa {gr.get('final_attempt', '?')})."
-                            )
+                # === GUARDA ANTI-RECUSA ===
+                # A reescrita e o retry acontecem DENTRO do cliente
+                # (cassandra/guard.py), valendo também para a web UI.
+                # Aqui só reportamos o que aconteceu.
+                try:
+                    gr = agent.client.last_guard_report or {}
+                except Exception:
+                    gr = {}
+                if gr.get("recovered"):
+                    print(
+                        ANSI.ok(
+                            "Recusa neutralizada automaticamente "
+                            f"(tentativa {gr.get('final_attempt', '?')})."
                         )
-                    elif gr.get("detected") and gr.get("recovered") is False:
-                        print(
-                            ANSI.fmt(
-                                "  ⚠️  Recusa persistente mesmo após reescrita. "
-                                "Reformule o pedido ou aumente "
-                                "CASSANDRA_REFUSAL_RETRIES.",
-                                ANSI.YELLOW,
-                                True,
-                            )
-                        )
-
-                    # === SALVA NO HISTÓRICO ===
-                    # `messages` é a lista que vai ao modelo NESTE turno;
-                    # `conversation` é a memória persistente entre turnos.
-                    # Ambas precisam ficar em sincronia.
-                    messages.append({"role": "assistant", "content": reply})
-                    conversation.append({"role": "assistant", "content": reply})
-
-                    # NOTA: a compactação NÃO acontece aqui. Ela roda no
-                    # início do próximo turno (ver abaixo), depois que todo
-                    # o trabalho pendente deste turno terminou. Compactar
-                    # no meio da execução apagava o comando que a Cassandra
-                    # acabara de gerar — ela "largava a mão" da tarefa.
-
-                    # === DOWNLOAD DE FERRAMENTA SOB DEMANDA ===
-                    # A Cassandra pode pedir uma ferramenta externa com um
-                    # bloco ```tool. Todas as validações de segurança ficam
-                    # em cassandra/toolfetch.py (allowlist, sandbox, hash).
-                    if _extract_tool_blocks is not None:
-                        tool_specs = _extract_tool_blocks(reply)
-                        if tool_specs:
-                            for spec in tool_specs:
-                                tname = spec.get("name", "?")
-                                tsrc = spec.get("source", "?")
-                                print(
-                                    ANSI.tool(
-                                        f"Cassandra solicitou ferramenta: "
-                                        f"{tname} (via {tsrc})"
-                                    )
-                                )
-                                try:
-                                    _tr = _tool_fetch(
-                                        spec, allow_execute=allow_shell
-                                    )
-                                except Exception as _texc:  # noqa: BLE001
-                                    print(ANSI.dim(f"      erro: {_texc}"))
-                                    continue
-
-                                if _tr.action == "suggested":
-                                    print(ANSI.dim(f"      sugerido: {_tr.command}"))
-                                    msg = (
-                                        f"[FERRAMENTA SUGERIDA: {tname}]\n"
-                                        f"Modo restrito — o operador deve rodar:\n"
-                                        f"```bash\n{_tr.command}\n```\n"
-                                        f"Motivo: {spec.get('reason', '(não informado)')}\n\n"
-                                        "Continue a tarefa assumindo que a "
-                                        "ferramenta estará disponível, ou "
-                                        "proponha uma alternativa que não "
-                                        "exija instalação."
-                                    )
-                                elif _tr.ok:
-                                    print(ANSI.ok(f"      {_tr.message}"))
-                                    if _tr.path:
-                                        print(ANSI.dim(f"      em: {_tr.path}"))
-                                    msg = (
-                                        f"[FERRAMENTA DISPONÍVEL: {tname}]\n"
-                                        f"{_tr.message}\n"
-                                        + (f"Caminho: {_tr.path}\n" if _tr.path else "")
-                                        + (f"SHA-256: {_tr.sha256}\n" if _tr.sha256 else "")
-                                        + "\nContinue a tarefa usando a ferramenta."
-                                    )
-                                else:
-                                    print(ANSI.err(f"      recusado: {_tr.message}"))
-                                    msg = (
-                                        f"[FERRAMENTA INDISPONÍVEL: {tname}]\n"
-                                        f"Motivo: {_tr.message}\n\n"
-                                        "Não insista nesta ferramenta. Use uma "
-                                        "alternativa já disponível no sistema "
-                                        "ou explique o bloqueio ao operador."
-                                    )
-                                messages.append({"role": "user", "content": msg})
-                                conversation.append({"role": "user", "content": msg})
-                            step += 1
-                            continue
-
-                    # === CARREGAMENTO DE SKILL SOB DEMANDA ===
-                    # A Cassandra pode pedir uma skill específica com um
-                    # bloco ```skill. Carregamos e devolvemos o conteúdo.
-                    skill_blocks = re.findall(
-                        r"```skill\s*\n(.*?)\n```", reply, re.IGNORECASE | re.DOTALL
                     )
-                    if skill_blocks and agent._skill_index is not None:
-                        for query in skill_blocks:
-                            query = query.strip()
-                            if not query:
-                                continue
+                elif gr.get("detected") and gr.get("recovered") is False:
+                    print(
+                        ANSI.fmt(
+                            "  ⚠️  Recusa persistente mesmo após reescrita. "
+                            "Reformule o pedido ou aumente "
+                            "CASSANDRA_REFUSAL_RETRIES.",
+                            ANSI.YELLOW,
+                            True,
+                        )
+                    )
+
+                # === SALVA NO HISTÓRICO ===
+                # `messages` é a lista que vai ao modelo NESTE turno;
+                # `conversation` é a memória persistente entre turnos.
+                # Ambas precisam ficar em sincronia.
+                messages.append({"role": "assistant", "content": reply})
+                conversation.append({"role": "assistant", "content": reply})
+
+                # NOTA: a compactação NÃO acontece aqui. Ela roda no
+                # início do próximo turno (ver abaixo), depois que todo
+                # o trabalho pendente deste turno terminou. Compactar
+                # no meio da execução apagava o comando que a Cassandra
+                # acabara de gerar — ela "largava a mão" da tarefa.
+
+                # === DOWNLOAD DE FERRAMENTA SOB DEMANDA ===
+                # A Cassandra pode pedir uma ferramenta externa com um
+                # bloco ```tool. Todas as validações de segurança ficam
+                # em cassandra/toolfetch.py (allowlist, sandbox, hash).
+                if _extract_tool_blocks is not None:
+                    tool_specs = _extract_tool_blocks(reply)
+                    if tool_specs:
+                        for spec in tool_specs:
+                            tname = spec.get("name", "?")
+                            tsrc = spec.get("source", "?")
                             print(
-                                ANSI.skill(f"Cassandra solicitou a skill: {query}")
+                                ANSI.tool(
+                                    f"Cassandra solicitou ferramenta: "
+                                    f"{tname} (via {tsrc})"
+                                )
                             )
-                            content, loaded = agent._skill_index.load(query)
-                            if content:
-                                print(ANSI.dim(f"      carregada: {', '.join(loaded)}"))
+                            try:
+                                _tr = _tool_fetch(
+                                    spec, allow_execute=allow_shell
+                                )
+                            except Exception as _texc:  # noqa: BLE001
+                                print(ANSI.dim(f"      erro: {_texc}"))
+                                continue
+
+                            if _tr.action == "suggested":
+                                print(ANSI.dim(f"      sugerido: {_tr.command}"))
                                 msg = (
-                                    f"[SKILL CARREGADA: {', '.join(loaded)}]\n\n"
-                                    f"{content}\n\n"
-                                    "Use o procedimento acima para continuar."
+                                    f"[FERRAMENTA SUGERIDA: {tname}]\n"
+                                    f"Modo restrito — o operador deve rodar:\n"
+                                    f"```bash\n{_tr.command}\n```\n"
+                                    f"Motivo: {spec.get('reason', '(não informado)')}\n\n"
+                                    "Continue a tarefa assumindo que a "
+                                    "ferramenta estará disponível, ou "
+                                    "proponha uma alternativa que não "
+                                    "exija instalação."
+                                )
+                            elif _tr.ok:
+                                print(ANSI.ok(f"      {_tr.message}"))
+                                if _tr.path:
+                                    print(ANSI.dim(f"      em: {_tr.path}"))
+                                msg = (
+                                    f"[FERRAMENTA DISPONÍVEL: {tname}]\n"
+                                    f"{_tr.message}\n"
+                                    + (f"Caminho: {_tr.path}\n" if _tr.path else "")
+                                    + (f"SHA-256: {_tr.sha256}\n" if _tr.sha256 else "")
+                                    + "\nContinue a tarefa usando a ferramenta."
                                 )
                             else:
-                                avail = agent._skill_index.catalog(limit=60)
-                                print(ANSI.dim("      não encontrada"))
+                                print(ANSI.err(f"      recusado: {_tr.message}"))
                                 msg = (
-                                    f"[SKILL NÃO ENCONTRADA: '{query}']\n\n"
-                                    f"Skills disponíveis: {avail}\n\n"
-                                    "Tente outro nome ou prossiga sem ela."
+                                    f"[FERRAMENTA INDISPONÍVEL: {tname}]\n"
+                                    f"Motivo: {_tr.message}\n\n"
+                                    "Não insista nesta ferramenta. Use uma "
+                                    "alternativa já disponível no sistema "
+                                    "ou explique o bloqueio ao operador."
                                 )
                             messages.append({"role": "user", "content": msg})
                             conversation.append({"role": "user", "content": msg})
                         step += 1
                         continue
 
-                    # === VERIFICA BUSCA AUTÔNOMA DA CASSANDRA ===
-                    search_blocks = re.findall(r"```(?:search|web)\s*\n(.*?)\n```", reply, re.IGNORECASE | re.DOTALL)
-                    if search_blocks:
-                        for query in search_blocks:
-                            query = query.strip()
-                            if not query:
-                                continue
-                            print()
-                            print(ANSI.web(f"Cassandra buscando na web autonomamente: {query}"))
-                            log_activity("web.search.auto", query, "Busca autônoma solicitada pelo modelo")
-                            
-                            try:
-                                search_result = web_search_and_fetch(query, max_results=5)
-                                result_msg = f"[RESULTADOS DA BUSCA NA WEB PARA '{query}']\n{search_result}\n\nCom base nestes resultados, continue ou reformule sua resposta. Não esqueça de citar as fontes."
-                                messages.append({"role": "user", "content": result_msg})
-                                conversation.append({"role": "user", "content": result_msg})
-                            except Exception as exc:
-                                print(ANSI.dim(f"  (Busca na web falhou: {exc})"))
-                                error_msg = f"[ERRO NA BUSCA NA WEB]\nNão foi possível buscar '{query}': {exc}\nContinue sem esses dados se possível."
-                                messages.append({"role": "user", "content": error_msg})
-                                conversation.append({"role": "user", "content": error_msg})
+                # === CARREGAMENTO DE SKILL SOB DEMANDA ===
+                # A Cassandra pode pedir uma skill específica com um
+                # bloco ```skill. Carregamos e devolvemos o conteúdo.
+                skill_blocks = re.findall(
+                    r"```skill\s*\n(.*?)\n```", reply, re.IGNORECASE | re.DOTALL
+                )
+                if skill_blocks and agent._skill_index is not None:
+                    for query in skill_blocks:
+                        query = query.strip()
+                        if not query:
+                            continue
+                        print(
+                            ANSI.skill(f"Cassandra solicitou a skill: {query}")
+                        )
+                        content, loaded = agent._skill_index.load(query)
+                        if content:
+                            print(ANSI.dim(f"      carregada: {', '.join(loaded)}"))
+                            msg = (
+                                f"[SKILL CARREGADA: {', '.join(loaded)}]\n\n"
+                                f"{content}\n\n"
+                                "Use o procedimento acima para continuar."
+                            )
+                        else:
+                            avail = agent._skill_index.catalog(limit=60)
+                            print(ANSI.dim("      não encontrada"))
+                            msg = (
+                                f"[SKILL NÃO ENCONTRADA: '{query}']\n\n"
+                                f"Skills disponíveis: {avail}\n\n"
+                                "Tente outro nome ou prossiga sem ela."
+                            )
+                        messages.append({"role": "user", "content": msg})
+                        conversation.append({"role": "user", "content": msg})
+                    step += 1
+                    continue
+
+                # === VERIFICA BUSCA AUTÔNOMA DA CASSANDRA ===
+                search_blocks = re.findall(r"```(?:search|web)\s*\n(.*?)\n```", reply, re.IGNORECASE | re.DOTALL)
+                if search_blocks:
+                    for query in search_blocks:
+                        query = query.strip()
+                        if not query:
+                            continue
+                        print()
+                        print(ANSI.web(f"Cassandra buscando na web autonomamente: {query}"))
+                        log_activity("web.search.auto", query, "Busca autônoma solicitada pelo modelo")
                         
+                        try:
+                            search_result = web_search_and_fetch(query, max_results=5)
+                            result_msg = f"[RESULTADOS DA BUSCA NA WEB PARA '{query}']\n{search_result}\n\nCom base nestes resultados, continue ou reformule sua resposta. Não esqueça de citar as fontes."
+                            messages.append({"role": "user", "content": result_msg})
+                            conversation.append({"role": "user", "content": result_msg})
+                        except Exception as exc:
+                            print(ANSI.dim(f"  (Busca na web falhou: {exc})"))
+                            error_msg = f"[ERRO NA BUSCA NA WEB]\nNão foi possível buscar '{query}': {exc}\nContinue sem esses dados se possível."
+                            messages.append({"role": "user", "content": error_msg})
+                            conversation.append({"role": "user", "content": error_msg})
+                    
+                    step += 1
+                    continue
+
+                if allow_shell:
+                    cmd_output = execute_shell_blocks(reply, auto_execute=allow_shell)
+                    if cmd_output:
+                        messages.append({
+                            "role": "user",
+                            "content": f"[SAÍDA DA EXECUÇÃO LOCAL]\n```text\n{cmd_output}\n```\nAnalise a saída e continue de forma autônoma."
+                        })
                         step += 1
                         continue
 
-                    if allow_shell:
-                        cmd_output = execute_shell_blocks(reply, auto_execute=allow_shell)
-                        if cmd_output:
-                            messages.append({
-                                "role": "user",
-                                "content": f"[SAÍDA DA EXECUÇÃO LOCAL]\n```text\n{cmd_output}\n```\nAnalise a saída e continue de forma autônoma."
-                            })
-                            step += 1
-                            continue
-
-                    break
+                break
 
         except (KeyboardInterrupt, EOFError):
             print(ANSI.dim("Sessão encerrada."))
@@ -2621,13 +2620,22 @@ def main():
         help="Intervalo do polling em segundos.",
     )
 
+    _env_allow_shell = os.getenv("CASSANDRA_ALLOW_SHELL", "1").lower() in ("1", "true", "yes", "on")
     parser.add_argument(
         "--allow-shell",
+        dest="allow_shell",
         action="store_true",
+        default=_env_allow_shell,
         help=(
             "Permite executar blocos bash retornados pela API "
-            "LIVREMENTE e AUTOMATICAMENTE, sem pedir confirmação."
+            "LIVREMENTE e AUTOMATICAMENTE, sem pedir confirmação (padrão: ativo)."
         ),
+    )
+    parser.add_argument(
+        "--no-allow-shell",
+        dest="allow_shell",
+        action="store_false",
+        help="Desativa a execução automática de comandos shell.",
     )
 
     args = parser.parse_args()

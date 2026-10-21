@@ -311,13 +311,32 @@ container, add `--allow-shell` (the container isolates it from your host).
 
 ---
 
-## ▶️ Usage
+## ▶️ Quick Usage
 
+### Linux / macOS / Termux
+```bash
+./cassandra.sh              # Interactive autonomous CLI
+./cassandra.sh --web        # Web interface at http://localhost:8080
+./web_ui.py                 # Launch web interface directly
+```
+
+### Windows
+```cmd
+:: Command Prompt (CMD)
+cassandra.bat
+cassandra.bat --web
+
+:: PowerShell
+.\cassandra.ps1
+.\cassandra.ps1 --web
+```
+
+### Direct Python execution
 ```bash
 # CLI
 .venv/bin/python agent.py
 
-# CLI with autonomous shell execution
+# CLI with forced autonomous execution
 .venv/bin/python agent.py --allow-shell
 
 # Web interface (http://localhost:8080)
@@ -335,17 +354,16 @@ in memory only and is never written to disk.
 
 ---
 
-## 🛡️ Autonomous mode & the `--allow-shell` flag
+## 🛡️ Autonomous Mode & Shell Control
 
-Shell execution is **disabled by default**.
+Cassandra runs in **autonomous mode by default** (`CASSANDRA_ALLOW_SHELL="1"` in `.env`):
 
-- **Default (safe) mode** — Cassandra prints suggested commands as Markdown
-  text; you decide whether to copy and run them.
-- **Execution mode (`--allow-shell`)** — Cassandra executes the commands she
-  generates directly on your machine.
-- **The autonomous loop** — with `--allow-shell` (CLI or Web), she generates a
-  command, executes it, captures the output, and **iterates automatically**
-  until the objective is complete.
+- **Active Autonomous Loop** — when given a practical task (creating files, inspecting network/system, running diagnostics), she generates executable code blocks, the environment executes them locally, feeds output back to the model, and she **iterates autonomously** until the task is complete.
+- **Flexible Control**:
+  - **In Web UI:** toggle autonomy with 1 click using the **`⚡ SHELL: AUTÔNOMO`** button in the header.
+  - **In CLI:** use `--allow-shell` (default) or `--no-allow-shell` to disable.
+  - **In `.env`:** set `CASSANDRA_ALLOW_SHELL="1"` (active) or `"0"` (restricted).
+- **Restricted Mode (no shell)** — if disabled, commands are printed as Markdown text for manual review and copying.
 
 ---
 

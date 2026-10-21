@@ -323,13 +323,32 @@ container, adicione `--allow-shell` (o container isola do seu host).
 
 ---
 
-## ▶️ Uso
+## ▶️ Uso rápido
 
+### Linux / macOS / Termux
+```bash
+./cassandra.sh              # CLI interativa autônoma
+./cassandra.sh --web        # Interface web em http://localhost:8080
+./web_ui.py                 # Iniciar interface web diretamente
+```
+
+### Windows
+```cmd
+:: Prompt de Comando (CMD)
+cassandra.bat
+cassandra.bat --web
+
+:: PowerShell
+.\cassandra.ps1
+.\cassandra.ps1 --web
+```
+
+### Comandos manuais com Python
 ```bash
 # CLI
 .venv/bin/python agent.py
 
-# CLI com execução autônoma de shell
+# CLI com execução autônoma forçada
 .venv/bin/python agent.py --allow-shell
 
 # Interface web (http://localhost:8080)
@@ -347,17 +366,16 @@ execução — ela fica apenas em memória e nunca é gravada em disco.
 
 ---
 
-## 🛡️ Modo autônomo e a flag `--allow-shell`
+## 🛡️ Modo autônomo e controle de Shell
 
-A execução de shell é **desativada por padrão**.
+A Cassandra opera de forma **autônoma por padrão** (`CASSANDRA_ALLOW_SHELL="1"` no `.env`):
 
-- **Modo padrão (seguro)** — a Cassandra exibe os comandos sugeridos como
-  texto Markdown; você decide se copia e executa.
-- **Modo de execução (`--allow-shell`)** — a Cassandra executa localmente os
-  comandos que gera.
-- **O loop autônomo** — com `--allow-shell` (CLI ou Web), ela gera o comando,
-  executa, captura a saída e **itera automaticamente** até o objetivo ser
-  concluído.
+- **O loop autônomo ativo** — ao receber um pedido prático (criar arquivos, investigar a rede, ler logs, executar comandos), ela emite os blocos de código executáveis, o ambiente executa localmente, captura o retorno e ela **itera de forma autônoma** até concluir a tarefa.
+- **Controle flexível**:
+  - **No Web UI:** alterne a autonomia com 1 clique no botão **`⚡ SHELL: AUTÔNOMO`** no cabeçalho.
+  - **No CLI:** use `--allow-shell` (padrão) ou `--no-allow-shell` para desativar.
+  - **No `.env`:** configure `CASSANDRA_ALLOW_SHELL="1"` (ativo) ou `"0"` (restrito).
+- **Modo restrito (sem shell)** — se desativado, ela apenas escreve os comandos sugeridos em Markdown para cópia manual.
 
 ---
 

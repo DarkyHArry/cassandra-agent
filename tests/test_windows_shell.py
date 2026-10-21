@@ -51,6 +51,15 @@ def _load_agent():
     return mod
 
 
+try:
+    import pytest
+    @pytest.fixture
+    def agent():
+        return _load_agent()
+except ImportError:
+    pass
+
+
 def test_extraction(agent) -> None:
     print("== extração de blocos ==")
     reply = (
