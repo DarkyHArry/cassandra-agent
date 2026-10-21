@@ -439,7 +439,6 @@ cassandra-agent/
 ├── cassandra-skill/    # 332 skills (Skillogy)
 ├── skills/             # Additional local skills
 ├── scripts/            # pre-commit provenance hook
-├── tests/              # provenance + Windows shell regression tests
 ├── .env.example        # Configuration template
 └── requirements.txt
 ```

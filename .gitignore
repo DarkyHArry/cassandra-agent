@@ -13,6 +13,9 @@ __pycache__/
 payload.json
 *.probe.txt
 MODELOS-*.md
+tests/
+*.lock
+.pytest_cache/
 
 # Curator / Skillogy state files
 .locks/
