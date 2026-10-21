@@ -12,6 +12,7 @@ __pycache__/
 .vscode/
 payload.json
 *.probe.txt
+MODELOS-*.md
 
 # Curator / Skillogy state files
 .locks/

@@ -17,8 +17,6 @@ PY="$VENV/bin/python"
 # Preserva HOME do usuário caso executado sob sudo
 if [[ -n "${SUDO_USER:-}" && -d "/home/$SUDO_USER" ]]; then
     export HOME="/home/$SUDO_USER"
-elif [[ -z "${HOME:-}" || "$HOME" == "/root" ]] && [[ -d /home/nok1am00n ]]; then
-    export HOME=/home/nok1am00n
 fi
 
 # Prepara ambiente virtual ou usa python3 do sistema (Termux / fallback)

@@ -65,7 +65,6 @@ PROVIDERS: List[Provider] = [
         env_var="NVIDIA_API_KEY",
         default_model="nvidia/nemotron-3-ultra-550b-a55b",
         models=[
-            # Verificados em 2026-10-20 contra a conta nvapi- operacional.
             # Ordem: maior janela de contexto primeiro.
             "nvidia/nemotron-3-ultra-550b-a55b",              # 1.048.576 tok
             "nvidia/nemotron-3.5-super-vl-120b-a12b",        # 1.000.000 tok
@@ -299,8 +298,7 @@ PROVIDER_MAP: Dict[str, Provider] = {p.key: p for p in PROVIDERS}
 # Overrides por modelo. Quando um modelo não está aqui, usa o
 # context_window do provedor. Valores reais dos fabricantes.
 MODEL_CONTEXT_WINDOWS: Dict[str, int] = {
-    # NVIDIA NIM — valores medidos em 2026-10-20 via erro HTTP 400 do
-    # endpoint ("This model's maximum context length is N tokens").
+    # NVIDIA NIM
     "nvidia/nemotron-3-ultra-550b-a55b": 1_048_576,
     "nvidia/nemotron-3.5-super-vl-120b-a12b": 1_000_000,
     "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": 1_000_000,
