@@ -139,6 +139,14 @@ O sistema rejeita encerramentos deliberativos em que o agente apenas processa in
 
 ---
 
+## Origem das Habilidades e Atribuicao (Decepticon Framework)
+
+O acervo de habilidades tecnicas e procedimentos contidos no diretorio `cassandra-skill/` deste repositorio e de total autoridade e autoria do projeto [Decepticon](https://github.com/BitterSecurity/Decepticon), mantido pela equipe da [BitterSecurity](https://github.com/BitterSecurity).
+
+Essas capacidades e matrizes operacionais foram incorporadas como massa de testes em versoes e ciclos anteriores da Cassandra para avaliacao de robustez comportamental, analise de superficie de ataque e simulacao de procedimentos tecnicos em ambientes de laboratorio. Elas nao representam o modelo neural privado nem os pesos proprietarios da atual versao Mythos 5.2, constando no repositorio unicamente como base documental de testes legados.
+
+---
+
 ## Historico de Anomalias do Modelo, Tragedias e Correcoes Aplicadas
 
 Durante as etapas de desenvolvimento, convergencia e operacao autonoma dos ciclos anteriores ao Mythos 5.2, foram identificadas anomalias criticas e tragedias operacionais que exigiram intervencoes arquiteturais de engenharia profunda. Cada incidente foi catalogado, dissecado e solucionado com a implementacao de barreiras sistemicas definitivas:
